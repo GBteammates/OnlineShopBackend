@@ -17,16 +17,16 @@
 version: '3.5'
 
 services:
-#  shop:
-#    build: .
-#    image: shop
-#    depends_on:
-#      - postgres
-#    ports:
-#      - "8000:8000"
-#    shm_size: "2gb"
-#    environment:
-#      PORT: ":8000"
+  shop:
+    build: .
+    image: shop
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    shm_size: "2gb"
+    environment:
+      PORT: ":8000"
 #      SHOP_UID: ${UID:-1000}                   # user id, should match your host user id
 #      SHOP_GID: ${GID:-1000}                   # group id
 
