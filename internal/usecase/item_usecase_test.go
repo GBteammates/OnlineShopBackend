@@ -21,7 +21,7 @@ func TestCreateItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 	testCategoryId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testModelItem := &models.Item{
 		Title:       "TestTitle",
@@ -53,7 +53,7 @@ func TestUpdateItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 
 	itemId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testCategoryId, _ := uuid.Parse("b02c1542-dba1-46d2-ac71-e770c13d0d50")
@@ -84,7 +84,7 @@ func TestGetItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := &models.Item{
@@ -116,7 +116,7 @@ func TestItemsList(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
@@ -189,7 +189,7 @@ func TestSearchLine(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := models.Item{
@@ -224,7 +224,7 @@ func TestUpdateCash(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := NewUsecase(itemRepo, categoryRepo, cash, logger)
 
 	cash.EXPECT().CheckCash(cashKey).Return(false)
 	err := usecase.updateCash(ctx, uuid.New(), "create")

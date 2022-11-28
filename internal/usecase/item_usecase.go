@@ -11,41 +11,41 @@ import (
 const cashKey = "ItemsList"
 
 // CreateItem call database method and returns id of created item or error
-func (storage *Storage) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
-	storage.logger.Debug("Enter in usecase CreateItem()")
-	id, err := storage.itemStore.CreateItem(ctx, item)
+func (usecase *Usecase) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
+	usecase.logger.Debug("Enter in usecase CreateItem()")
+	id, err := usecase.itemStore.CreateItem(ctx, item)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create item: %w", err)
 	}
-	err = storage.updateCash(ctx, id, "create")
+	err = usecase.updateCash(ctx, id, "create")
 	if err != nil {
-		storage.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
 	} else {
-		storage.logger.Info("Update cash success")
+		usecase.logger.Info("Update cash success")
 	}
 	return id, nil
 }
 
 // UpdateItem call database method to update item and returns error or nil
-func (storage *Storage) UpdateItem(ctx context.Context, item *models.Item) error {
-	storage.logger.Debug("Enter in usecase UpdateItem()")
-	err := storage.itemStore.UpdateItem(ctx, item)
+func (usecase *Usecase) UpdateItem(ctx context.Context, item *models.Item) error {
+	usecase.logger.Debug("Enter in usecase UpdateItem()")
+	err := usecase.itemStore.UpdateItem(ctx, item)
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = storage.updateCash(ctx, item.Id, "update")
+	err = usecase.updateCash(ctx, item.Id, "update")
 	if err != nil {
-		storage.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
 	} else {
-		storage.logger.Info("Update cash success")
+		usecase.logger.Info("Update cash success")
 	}
 	return nil
 }
 
 // GetItem call database and returns *models.Item with given id or returns error
-func (storage *Storage) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error) {
-	storage.logger.Debug("Enter in usecase GetItem()")
-	item, err := storage.itemStore.GetItem(ctx, id)
+func (usecase *Usecase) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error) {
+	usecase.logger.Debug("Enter in usecase GetItem()")
+	item, err := usecase.itemStore.GetItem(ctx, id)
 	if err != nil {
 		return &models.Item{}, fmt.Errorf("error on get item: %w", err)
 	}
@@ -53,10 +53,10 @@ func (storage *Storage) GetItem(ctx context.Context, id uuid.UUID) (*models.Item
 }
 
 // ItemsList call database method and returns chan with all models.Item or error
-func (storage *Storage) ItemsList(ctx context.Context) ([]models.Item, error) {
-	storage.logger.Debug("Enter in usecase ItemsList()")
-	if !storage.itemCash.CheckCash(cashKey) {
-		itemIncomingChan, err := storage.itemStore.ItemsList(ctx)
+func (usecase *Usecase) ItemsList(ctx context.Context) ([]models.Item, error) {
+	usecase.logger.Debug("Enter in usecase ItemsList()")
+	if !usecase.itemCash.CheckCash(cashKey) {
+		itemIncomingChan, err := usecase.itemStore.ItemsList(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -65,18 +65,18 @@ func (storage *Storage) ItemsList(ctx context.Context) ([]models.Item, error) {
 			items = append(items, item)
 		}
 
-		err = storage.itemCash.CreateCash(ctx, items, cashKey)
+		err = usecase.itemCash.CreateCash(ctx, items, cashKey)
 		if err != nil {
 			return nil, fmt.Errorf("error on create cash: %w", err)
 		}
 	}
-	return storage.itemCash.GetCash(cashKey)
+	return usecase.itemCash.GetCash(cashKey)
 }
 
 // SearchLine call database method and returns chan with all models.Item with given params or error
-func (storage *Storage) SearchLine(ctx context.Context, param string) (chan models.Item, error) {
-	storage.logger.Debug("Enter in usecase SearchLine()")
-	itemIncomingChan, err := storage.itemStore.SearchLine(ctx, param)
+func (usecase *Usecase) SearchLine(ctx context.Context, param string) (chan models.Item, error) {
+	usecase.logger.Debug("Enter in usecase SearchLine()")
+	itemIncomingChan, err := usecase.itemStore.SearchLine(ctx, param)
 	if err != nil {
 		return nil, err
 	}
@@ -99,16 +99,16 @@ func (storage *Storage) SearchLine(ctx context.Context, param string) (chan mode
 }
 
 // updateCash updating cash when creating or updating item
-func (storage *Storage) updateCash(ctx context.Context, id uuid.UUID, op string) error {
-	storage.logger.Debug("Enter in usecase UpdateCash()")
-	if !storage.itemCash.CheckCash(cashKey) {
+func (usecase *Usecase) updateCash(ctx context.Context, id uuid.UUID, op string) error {
+	usecase.logger.Debug("Enter in usecase UpdateCash()")
+	if !usecase.itemCash.CheckCash(cashKey) {
 		return fmt.Errorf("cash is not exists")
 	}
-	newItem, err := storage.itemStore.GetItem(ctx, id)
+	newItem, err := usecase.itemStore.GetItem(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get item: %w", err)
 	}
-	items, err := storage.itemCash.GetCash(cashKey)
+	items, err := usecase.itemCash.GetCash(cashKey)
 	if err != nil {
 		return fmt.Errorf("error on get cash: %w", err)
 	}
@@ -124,5 +124,5 @@ func (storage *Storage) updateCash(ctx context.Context, id uuid.UUID, op string)
 		items = append(items, *newItem)
 	}
 
-	return storage.itemCash.CreateCash(ctx, items, cashKey)
+	return usecase.itemCash.CreateCash(ctx, items, cashKey)
 }

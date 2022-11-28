@@ -7,11 +7,11 @@ import (
 )
 
 type Handlers struct {
-	repo   *usecase.Storage
+	repo   *usecase.Usecase
 	logger *zap.Logger
 }
 
-func NewHandlers(repo *usecase.Storage, logger *zap.Logger) *Handlers {
+func NewHandlers(repo *usecase.Usecase, logger *zap.Logger) *Handlers {
 	logger.Debug("Enter in NewHandlers()")
 	return &Handlers{repo: repo, logger: logger}
 }

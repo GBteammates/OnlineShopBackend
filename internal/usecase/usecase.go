@@ -7,13 +7,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type Storage struct {
+type Usecase struct {
 	itemStore     repository.ItemStore
 	categoryStore repository.CategoryStore
 	itemCash      cash.Cash
 	logger        *zap.Logger
 }
 
-func NewStorage(itemStore repository.ItemStore, categoryStore repository.CategoryStore, itemCash cash.Cash, logger *zap.Logger) *Storage {
-	return &Storage{itemStore: itemStore, categoryStore: categoryStore, itemCash: itemCash, logger: logger}
+func NewUsecase(itemStore repository.ItemStore, categoryStore repository.CategoryStore, itemCash cash.Cash, logger *zap.Logger) *Usecase {
+	return &Usecase{itemStore: itemStore, categoryStore: categoryStore, itemCash: itemCash, logger: logger}
 }

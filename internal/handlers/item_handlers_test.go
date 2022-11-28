@@ -22,7 +22,7 @@ func TestCreateItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := usecase.NewUsecase(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	testKey := "ItemsList"
 	testItem := Item{
@@ -63,7 +63,7 @@ func TestUpdateItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := usecase.NewUsecase(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	testKey := "ItemsList"
 	testItem := Item{
@@ -103,7 +103,7 @@ func TestGetItem(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := usecase.NewUsecase(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
@@ -148,7 +148,7 @@ func TestItemsList(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := usecase.NewUsecase(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	testKey := "ItemsList"
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
@@ -197,7 +197,7 @@ func TestSearchLine(t *testing.T) {
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
+	usecase := usecase.NewUsecase(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)

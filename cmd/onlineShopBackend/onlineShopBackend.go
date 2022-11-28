@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("can't initialize cash: %v", err)
 	}
-	usecase := usecase.NewStorage(store, store, cash, l)
+	usecase := usecase.NewUsecase(store, store, cash, l)
 	handlers := handlers.NewHandlers(usecase, l)
 	filestorage := filestorage.NewInMemoryStorage(cfg.FsPath)
 	delivery := delivery.NewDelivery(handlers, l, filestorage)
