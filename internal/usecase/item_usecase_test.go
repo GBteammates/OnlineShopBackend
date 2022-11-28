@@ -22,6 +22,7 @@ func TestCreateItem(t *testing.T) {
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
 	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	testKey := "ItemsList"
 	testCategoryId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testModelItem := &models.Item{
 		Title:       "TestTitle",
@@ -32,10 +33,12 @@ func TestCreateItem(t *testing.T) {
 	}
 	expect, _ := uuid.Parse("13574b3b-0c44-4864-89de-a086ad68ec4b")
 	itemRepo.EXPECT().CreateItem(ctx, testModelItem).Return(expect, nil)
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	res, err := usecase.CreateItem(ctx, testModelItem)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, res, expect)
+
 	err = fmt.Errorf("error on create item")
 	itemRepo.EXPECT().CreateItem(ctx, testModelItem).Return(uuid.Nil, err)
 	res, err = usecase.CreateItem(ctx, testModelItem)
@@ -52,7 +55,8 @@ func TestUpdateItem(t *testing.T) {
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockCash(ctrl)
 	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
-
+	
+	testKey := "ItemsList"
 	itemId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testCategoryId, _ := uuid.Parse("b02c1542-dba1-46d2-ac71-e770c13d0d50")
 	testModelItem := &models.Item{
@@ -64,6 +68,7 @@ func TestUpdateItem(t *testing.T) {
 		Vendor:      "TestVendor",
 	}
 	itemRepo.EXPECT().UpdateItem(ctx, testModelItem).Return(nil)
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	err := usecase.UpdateItem(ctx, testModelItem)
 	require.NoError(t, err)
 

@@ -24,6 +24,7 @@ func TestCreateItem(t *testing.T) {
 	cash := mocks.NewMockCash(ctrl)
 	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
+	testKey := "ItemsList"
 	testItem := Item{
 		Title:       "TestTitle",
 		Description: "TestDescription",
@@ -41,10 +42,12 @@ func TestCreateItem(t *testing.T) {
 	}
 	expect, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	itemRepo.EXPECT().CreateItem(ctx, testModelItem).Return(expect, nil)
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	res, err := handlers.CreateItem(ctx, testItem)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, res, expect)
+
 	err = fmt.Errorf("error on create item")
 	itemRepo.EXPECT().CreateItem(ctx, testModelItem).Return(uuid.Nil, err)
 	res, err = handlers.CreateItem(ctx, testItem)
@@ -62,6 +65,7 @@ func TestUpdateItem(t *testing.T) {
 	cash := mocks.NewMockCash(ctrl)
 	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
+	testKey := "ItemsList"
 	testItem := Item{
 		Id:          "feb77bbc-1b8a-4739-bd68-d3b052af9a80",
 		Title:       "TestTitle",
@@ -81,6 +85,7 @@ func TestUpdateItem(t *testing.T) {
 		Vendor:      testItem.Vendor,
 	}
 	itemRepo.EXPECT().UpdateItem(ctx, testModelItem).Return(nil)
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	err := handlers.UpdateItem(ctx, testItem)
 	require.NoError(t, err)
 

@@ -69,6 +69,7 @@ func (repo *Pgrepo) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, er
 }
 
 func (repo *Pgrepo) ItemsList(ctx context.Context) (chan models.Item, error) {
+	repo.logger.Debug("Enter in repository ItemsList()")
 	itemChan := make(chan models.Item, 100)
 	go func() {
 		defer close(itemChan)
@@ -103,6 +104,7 @@ func (repo *Pgrepo) ItemsList(ctx context.Context) (chan models.Item, error) {
 }
 
 func (repo *Pgrepo) SearchLine(ctx context.Context, param string) (chan models.Item, error) {
+	repo.logger.Debug("Enter in repository SearchLine()")
 	itemChan := make(chan models.Item, 100)
 	go func() {
 		defer close(itemChan)

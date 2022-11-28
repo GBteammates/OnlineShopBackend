@@ -15,13 +15,29 @@ func (storage *Storage) CreateItem(ctx context.Context, item *models.Item) (uuid
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create item: %w", err)
 	}
+	err = storage.updateCash(ctx, id, "create")
+	if err != nil {
+		storage.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+	} else {
+		storage.logger.Info("Update cash success")
+	}
 	return id, nil
 }
 
 // UpdateItem call database method to update item and returns error or nil
 func (storage *Storage) UpdateItem(ctx context.Context, item *models.Item) error {
 	storage.logger.Debug("Enter in usecase UpdateItem()")
-	return storage.itemStore.UpdateItem(ctx, item)
+	err := storage.itemStore.UpdateItem(ctx, item)
+	if err != nil {
+		return fmt.Errorf("error on update item: %w", err)
+	}
+	err = storage.updateCash(ctx, item.Id, "update")
+	if err != nil {
+		storage.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+	} else {
+		storage.logger.Info("Update cash success")
+	}
+	return nil
 }
 
 // GetItem call database and returns *models.Item with given id or returns error
@@ -74,4 +90,40 @@ func (storage *Storage) SearchLine(ctx context.Context, param string) (chan mode
 		}
 	}()
 	return itemOutChan, nil
+}
+
+func (storage *Storage) updateCash(ctx context.Context, id uuid.UUID, op string) error {
+	storage.logger.Debug("Enter in usecase UpdateCash()")
+	key := "ItemsList"
+	if !storage.itemCash.CheckCash(key) {
+		return fmt.Errorf("cash is not exists")
+	}
+	item, err := storage.itemStore.GetItem(ctx, id)
+	if err != nil {
+		return fmt.Errorf("error on get item: %w", err)
+	}
+	items, err := storage.itemCash.GetCash(key)
+	if err != nil {
+		return fmt.Errorf("error on get cash: %w", err)
+	}
+	if op == "update" {
+		for i, item := range items {
+			if item.Id == id {
+				items[i] = item
+				break
+			}
+		}
+	}
+	if op == "create" {
+		items = append(items, *item)
+	}
+
+	itemsChan := make(chan models.Item, len(items))
+	go func() {
+		defer close(itemsChan)
+		for _, item := range items {
+			itemsChan <- item
+		}
+	}()
+	return storage.itemCash.CreateCash(ctx, itemsChan, key)
 }
