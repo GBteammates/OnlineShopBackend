@@ -97,6 +97,9 @@ func (cash *RedisCash) GetCash(key string) ([]models.Item, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &res)
+	if err != nil {
+		return nil, err
+	}
 	return res.Responses, nil
 }
