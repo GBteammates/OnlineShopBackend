@@ -7,6 +7,6 @@ import (
 
 type Cash interface {
 	CheckCash(key string) bool
-	CreateCash(ctx context.Context, res chan models.Item, key string) error
+	CreateCash(ctx context.Context, res []models.Item, key string) error
 	GetCash(key string) ([]models.Item, error)
 }

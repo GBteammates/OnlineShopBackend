@@ -50,7 +50,7 @@ func (mr *MockCashMockRecorder) CheckCash(key interface{}) *gomock.Call {
 }
 
 // CreateCash mocks base method.
-func (m *MockCash) CreateCash(ctx context.Context, res chan models.Item, key string) error {
+func (m *MockCash) CreateCash(ctx context.Context, res []models.Item, key string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateCash", ctx, res, key)
 	ret0, _ := ret[0].(error)

@@ -69,13 +69,11 @@ func (cash *RedisCash) CheckCash(key string) bool {
 }
 
 // CreateCash add data in the cash
-func (cash *RedisCash) CreateCash(ctx context.Context, res chan models.Item, key string) error {
+func (cash *RedisCash) CreateCash(ctx context.Context, res []models.Item, key string) error {
 	cash.logger.Debug("Enter in cash CreateCash()")
-	in := results{}
-	for resItem := range res {
-		in.Responses = append(in.Responses, resItem)
+	in := results{
+		Responses: res,
 	}
-
 	data, err := json.Marshal(in)
 	if err != nil {
 		return fmt.Errorf("marshal unknown item: %w", err)

@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const cashKey = "ItemsList"
+
 // CreateItem call database method and returns id of created item or error
 func (storage *Storage) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
 	storage.logger.Debug("Enter in usecase CreateItem()")
@@ -53,13 +55,17 @@ func (storage *Storage) GetItem(ctx context.Context, id uuid.UUID) (*models.Item
 // ItemsList call database method and returns chan with all models.Item or error
 func (storage *Storage) ItemsList(ctx context.Context) ([]models.Item, error) {
 	storage.logger.Debug("Enter in usecase ItemsList()")
-	cashKey := "ItemsList"
 	if !storage.itemCash.CheckCash(cashKey) {
 		itemIncomingChan, err := storage.itemStore.ItemsList(ctx)
 		if err != nil {
 			return nil, err
 		}
-		err = storage.itemCash.CreateCash(ctx, itemIncomingChan, cashKey)
+		items := make([]models.Item, 0, 100)
+		for item := range itemIncomingChan {
+			items = append(items, item)
+		}
+
+		err = storage.itemCash.CreateCash(ctx, items, cashKey)
 		if err != nil {
 			return nil, fmt.Errorf("error on create cash: %w", err)
 		}
@@ -92,38 +98,31 @@ func (storage *Storage) SearchLine(ctx context.Context, param string) (chan mode
 	return itemOutChan, nil
 }
 
+// updateCash updating cash when creating or updating item
 func (storage *Storage) updateCash(ctx context.Context, id uuid.UUID, op string) error {
 	storage.logger.Debug("Enter in usecase UpdateCash()")
-	key := "ItemsList"
-	if !storage.itemCash.CheckCash(key) {
+	if !storage.itemCash.CheckCash(cashKey) {
 		return fmt.Errorf("cash is not exists")
 	}
-	item, err := storage.itemStore.GetItem(ctx, id)
+	newItem, err := storage.itemStore.GetItem(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get item: %w", err)
 	}
-	items, err := storage.itemCash.GetCash(key)
+	items, err := storage.itemCash.GetCash(cashKey)
 	if err != nil {
 		return fmt.Errorf("error on get cash: %w", err)
 	}
 	if op == "update" {
 		for i, item := range items {
 			if item.Id == id {
-				items[i] = item
+				items[i] = *newItem
 				break
 			}
 		}
 	}
 	if op == "create" {
-		items = append(items, *item)
+		items = append(items, *newItem)
 	}
 
-	itemsChan := make(chan models.Item, len(items))
-	go func() {
-		defer close(itemsChan)
-		for _, item := range items {
-			itemsChan <- item
-		}
-	}()
-	return storage.itemCash.CreateCash(ctx, itemsChan, key)
+	return storage.itemCash.CreateCash(ctx, items, cashKey)
 }
