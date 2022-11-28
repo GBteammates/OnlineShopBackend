@@ -105,3 +105,6 @@ help: ## Show this help.
 
 mock:
 	mockgen -source=internal/repository/repo_interface.go -destination=internal/usecase/mocks/repo_mock.go -package=mocks ItemStore
+
+cash_mock:
+	mockgen -source=internal/cash/cash_interface.go -destination=internal/usecase/mocks/cash_mock.go -package=mocks Cash

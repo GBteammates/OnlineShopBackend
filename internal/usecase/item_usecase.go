@@ -35,28 +35,20 @@ func (storage *Storage) GetItem(ctx context.Context, id uuid.UUID) (*models.Item
 }
 
 // ItemsList call database method and returns chan with all models.Item or error
-func (storage *Storage) ItemsList(ctx context.Context) (chan models.Item, error) {
+func (storage *Storage) ItemsList(ctx context.Context) ([]models.Item, error) {
 	storage.logger.Debug("Enter in usecase ItemsList()")
-	itemIncomingChan, err := storage.itemStore.ItemsList(ctx)
-	if err != nil {
-		return nil, err
-	}
-	itemOutChan := make(chan models.Item, 100)
-	go func() {
-		defer close(itemOutChan)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case item, ok := <-itemIncomingChan:
-				if !ok {
-					return
-				}
-				itemOutChan <- item
-			}
+	cashKey := "ItemsList"
+	if !storage.itemCash.CheckCash(cashKey) {
+		itemIncomingChan, err := storage.itemStore.ItemsList(ctx)
+		if err != nil {
+			return nil, err
 		}
-	}()
-	return itemOutChan, nil
+		err = storage.itemCash.CreateCash(ctx, itemIncomingChan, cashKey)
+		if err != nil {
+			return nil, fmt.Errorf("error on create cash: %w", err)
+		}
+	}
+	return storage.itemCash.GetCash(cashKey)
 }
 
 // SearchLine call database method and returns chan with all models.Item with given params or error

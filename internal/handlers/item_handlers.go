@@ -94,15 +94,7 @@ func (handlers *Handlers) ItemsList(ctx context.Context) ([]Item, error) {
 	if err != nil {
 		return res, err
 	}
-	for {
-		select {
-		case <-ctx.Done():
-			handlers.logger.Debug("handlers ItemList() ctx.Done recieved")
-			return res, ctx.Err()
-		case item, ok := <-items:
-			if !ok {
-				return res, nil
-			}
+	for _, item := range items {
 			res = append(res, Item{
 				Id:          item.Id.String(),
 				Title:       item.Title,
@@ -112,9 +104,8 @@ func (handlers *Handlers) ItemsList(ctx context.Context) ([]Item, error) {
 				Vendor:      item.Vendor,
 			})
 		}
+		return res, nil
 	}
-
-}
 
 // SearchLine returns list of Items with parameters
 func (handlers *Handlers) SearchLine(ctx context.Context, param string) ([]Item, error) {

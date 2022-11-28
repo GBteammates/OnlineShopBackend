@@ -21,7 +21,8 @@ func TestCreateCategory(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	testCategory := Category{
 		Name:        "TestName",
@@ -52,7 +53,8 @@ func TestGetCategoryList(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := usecase.NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
 	id, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testModelCategory := models.Category{

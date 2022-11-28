@@ -6,6 +6,7 @@ import (
 	"OnlineShopBackend/internal/app/logger"
 	"OnlineShopBackend/internal/app/router"
 	"OnlineShopBackend/internal/app/server"
+	"OnlineShopBackend/internal/cash"
 	"OnlineShopBackend/internal/delivery"
 	"OnlineShopBackend/internal/filestorage"
 	"OnlineShopBackend/internal/handlers"
@@ -14,6 +15,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
@@ -31,9 +33,13 @@ func main() {
 	l := logger.Logger
 	store, err := repository.NewPgrepo(cfg.DSN, l)
 	if err != nil {
-		log.Fatalf("can't initalize storage: %v", err)
+		log.Fatalf("can't initialize storage: %v", err)
 	}
-	usecase := usecase.NewStorage(store, store, l)
+	cash, err := cash.NewRedisCash(cfg.CashHost, cfg.CashPort, time.Duration(cfg.CashTTL), l)
+	if err != nil {
+		log.Fatalf("can't initialize cash: %v", err)
+	}
+	usecase := usecase.NewStorage(store, store, cash, l)
 	handlers := handlers.NewHandlers(usecase, l)
 	filestorage := filestorage.NewInMemoryStorage(cfg.FsPath)
 	delivery := delivery.NewDelivery(handlers, l, filestorage)

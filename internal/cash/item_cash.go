@@ -1,7 +1,6 @@
 package cash
 
 import (
-	"OnlineShopBackend/internal/handlers"
 	"OnlineShopBackend/internal/models"
 	"context"
 	"encoding/json"
@@ -21,7 +20,7 @@ type RedisCash struct {
 }
 
 type results struct {
-	Responses []handlers.Item
+	Responses []models.Item
 }
 
 // NewRedisCash initialize redis client
@@ -74,14 +73,7 @@ func (cash *RedisCash) CreateCash(ctx context.Context, res chan models.Item, key
 	cash.logger.Debug("Enter in cash CreateCash()")
 	in := results{}
 	for resItem := range res {
-		in.Responses = append(in.Responses, handlers.Item{
-			Id:          resItem.Id.String(),
-			Title:       resItem.Title,
-			Description: resItem.Description,
-			Price:       resItem.Price,
-			Category:    resItem.Category.String(),
-			Vendor:      resItem.Vendor,
-		})
+		in.Responses = append(in.Responses, resItem)
 	}
 
 	data, err := json.Marshal(in)
@@ -97,7 +89,7 @@ func (cash *RedisCash) CreateCash(ctx context.Context, res chan models.Item, key
 }
 
 // GetCash retrieves data from the cache
-func (cash *RedisCash) GetCash(key string) ([]handlers.Item, error) {
+func (cash *RedisCash) GetCash(key string) ([]models.Item, error) {
 	cash.logger.Debug("Enter in cash GetCash()")
 	res := results{}
 	data, err := cash.Get(context.Background(), key).Bytes()

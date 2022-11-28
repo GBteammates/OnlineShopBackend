@@ -20,7 +20,8 @@ func TestCreateItem(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
 	testCategoryId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testModelItem := &models.Item{
 		Title:       "TestTitle",
@@ -49,13 +50,14 @@ func TestUpdateItem(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
 
 	itemId, _ := uuid.Parse("feb77bbc-1b8a-4739-bd68-d3b052af9a80")
 	testCategoryId, _ := uuid.Parse("b02c1542-dba1-46d2-ac71-e770c13d0d50")
 	testModelItem := &models.Item{
 		Id:          itemId,
-		Title:      "TestTitle",
+		Title:       "TestTitle",
 		Description: "TestDescription",
 		Category:    testCategoryId,
 		Price:       1,
@@ -78,7 +80,8 @@ func TestGetItem(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := &models.Item{
@@ -109,7 +112,9 @@ func TestItemsList(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
+	
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := models.Item{
@@ -120,15 +125,30 @@ func TestItemsList(t *testing.T) {
 		Price:       1,
 		Vendor:      "TestVendor",
 	}
+	testKey := "ItemsList"
 	testChan := make(chan models.Item, 1)
 	testChan <- testModelItem
 	close(testChan)
+	expect := make([]models.Item, 1)
+	expect = append(expect, testModelItem)
+	
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, nil)
+	cash.EXPECT().CreateCash(ctx, testChan, testKey)
+	cash.EXPECT().GetCash(testKey).Return(expect, nil)
 	res, err := usecase.ItemsList(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, res)
+	require.Equal(t, res, expect)
+
+	cash.EXPECT().CheckCash(testKey).Return(true)
+	cash.EXPECT().GetCash(testKey).Return(expect, nil)
+	require.NoError(t, err)
+	require.NotNil(t, res)
+	require.Equal(t, res, expect)
 
 	err = fmt.Errorf("error on itemslist()")
+	cash.EXPECT().CheckCash(testKey).Return(false)
 	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, err)
 	res, err = usecase.ItemsList(ctx)
 	require.Error(t, err)
@@ -142,7 +162,8 @@ func TestSearchLine(t *testing.T) {
 	logger := zap.L()
 	categoryRepo := mocks.NewMockCategoryStore(ctrl)
 	itemRepo := mocks.NewMockItemStore(ctrl)
-	usecase := NewStorage(itemRepo, categoryRepo, logger)
+	cash := mocks.NewMockCash(ctrl)
+	usecase := NewStorage(itemRepo, categoryRepo, cash, logger)
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := models.Item{
