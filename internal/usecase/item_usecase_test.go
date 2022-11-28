@@ -134,7 +134,7 @@ func TestItemsList(t *testing.T) {
 	
 	cash.EXPECT().CheckCash(testKey).Return(false)
 	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, nil)
-	cash.EXPECT().CreateCash(ctx, testChan, testKey)
+	cash.EXPECT().CreateCash(ctx, testChan, testKey).Return(nil)
 	cash.EXPECT().GetCash(testKey).Return(expect, nil)
 	res, err := usecase.ItemsList(ctx)
 	require.NoError(t, err)
@@ -143,6 +143,7 @@ func TestItemsList(t *testing.T) {
 
 	cash.EXPECT().CheckCash(testKey).Return(true)
 	cash.EXPECT().GetCash(testKey).Return(expect, nil)
+	res, err = usecase.ItemsList(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.Equal(t, res, expect)
@@ -150,6 +151,21 @@ func TestItemsList(t *testing.T) {
 	err = fmt.Errorf("error on itemslist()")
 	cash.EXPECT().CheckCash(testKey).Return(false)
 	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, err)
+	res, err = usecase.ItemsList(ctx)
+	require.Error(t, err)
+	require.Nil(t, res)
+
+	cash.EXPECT().CheckCash(testKey).Return(false)
+	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, nil)
+	cash.EXPECT().CreateCash(ctx, testChan, testKey).Return(err)
+	res, err = usecase.ItemsList(ctx)
+	require.Error(t, err)
+	require.Nil(t, res)
+
+	cash.EXPECT().CheckCash(testKey).Return(false)
+	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, nil)
+	cash.EXPECT().CreateCash(ctx, testChan, testKey).Return(nil)
+	cash.EXPECT().GetCash(testKey).Return(nil, err)
 	res, err = usecase.ItemsList(ctx)
 	require.Error(t, err)
 	require.Nil(t, res)

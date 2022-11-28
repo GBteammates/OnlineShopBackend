@@ -145,6 +145,7 @@ func TestItemsList(t *testing.T) {
 	cash := mocks.NewMockCash(ctrl)
 	usecase := usecase.NewStorage(itemRepo, categoryRepo, cash, logger)
 	handlers := NewHandlers(usecase, logger)
+	testKey := "ItemsList"
 	id := "feb77bbc-1b8a-4739-bd68-d3b052af9a80"
 	uid, _ := uuid.Parse(id)
 	testModelItem := models.Item{
@@ -155,6 +156,7 @@ func TestItemsList(t *testing.T) {
 		Price:       1,
 		Vendor:      "TestVendor",
 	}
+	testModelSlice := []models.Item{testModelItem}
 	testItem := Item{
 		Id:          id,
 		Title:       testModelItem.Title,
@@ -163,12 +165,11 @@ func TestItemsList(t *testing.T) {
 		Price:       testModelItem.Price,
 		Vendor:      testModelItem.Vendor,
 	}
-	testChan := make(chan models.Item, 1)
-	testChan <- testModelItem
-	close(testChan)
 	testSlice := make([]Item, 0, 100)
 	testSlice = append(testSlice, testItem)
-	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, nil)
+
+	cash.EXPECT().CheckCash(testKey).Return(true)
+	cash.EXPECT().GetCash(testKey).Return(testModelSlice, nil)
 	res, err := handlers.ItemsList(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, res)
@@ -176,7 +177,8 @@ func TestItemsList(t *testing.T) {
 
 	err = fmt.Errorf("error on itemslist()")
 	testSlice2 := make([]Item, 0, 100)
-	itemRepo.EXPECT().ItemsList(ctx).Return(testChan, err)
+	cash.EXPECT().CheckCash(testKey).Return(true)
+	cash.EXPECT().GetCash(testKey).Return(nil, err)
 	res, err = handlers.ItemsList(ctx)
 	require.Error(t, err)
 	require.Equal(t, res, testSlice2)
