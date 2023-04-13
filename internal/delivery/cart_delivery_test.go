@@ -4,7 +4,7 @@ import (
 	"OnlineShopBackend/internal/delivery/cart"
 	"OnlineShopBackend/internal/delivery/category"
 	"OnlineShopBackend/internal/delivery/item"
-	fs "OnlineShopBackend/internal/filestorage/mocks"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"bytes"

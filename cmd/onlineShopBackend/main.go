@@ -6,7 +6,7 @@ import (
 	"OnlineShopBackend/internal/delivery/router"
 	"OnlineShopBackend/internal/delivery/server"
 	"OnlineShopBackend/internal/delivery/user/password"
-	"OnlineShopBackend/internal/filestorage"
+	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
 	"OnlineShopBackend/internal/repository/cash"

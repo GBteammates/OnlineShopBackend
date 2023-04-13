@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	filestorage "OnlineShopBackend/internal/filestorage"
+	filestorage "OnlineShopBackend/internal/repository/filestorage"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"

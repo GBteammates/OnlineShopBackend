@@ -2,7 +2,7 @@ package delivery
 
 import (
 	"OnlineShopBackend/internal/delivery/category"
-	fs "OnlineShopBackend/internal/filestorage/mocks"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"bytes"

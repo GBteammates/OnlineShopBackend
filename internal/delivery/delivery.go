@@ -2,8 +2,8 @@ package delivery
 
 import (
 	"OnlineShopBackend/internal/delivery/file"
-	"OnlineShopBackend/internal/filestorage"
 	"OnlineShopBackend/internal/metrics"
+	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/usecase"
 	"net/http"
 
@@ -23,7 +23,7 @@ import (
 type Delivery struct {
 	itemUsecase     usecase.IItemUsecase
 	categoryUsecase usecase.ICategoryUsecase
-	userUsecase usecase.IUserUsecase
+	userUsecase     usecase.IUserUsecase
 	cartUsecase     usecase.ICartUsecase
 	logger          *zap.Logger
 	filestorage     filestorage.FileStorager
@@ -46,7 +46,7 @@ func NewDelivery(
 		itemUsecase:     itemUsecase,
 		categoryUsecase: categoryUsecase,
 		cartUsecase:     cartUsecase,
-		userUsecase: userUsecase,
+		userUsecase:     userUsecase,
 		logger:          logger, filestorage: fs,
 		orderUsecase: orderUsecase,
 	}

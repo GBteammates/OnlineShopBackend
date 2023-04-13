@@ -56,7 +56,7 @@ func TestCreateUser(t *testing.T) {
 
 import (
 	"OnlineShopBackend/internal/delivery/user"
-	fs "OnlineShopBackend/internal/filestorage/mocks"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"bytes"

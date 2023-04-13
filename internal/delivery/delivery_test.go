@@ -1,8 +1,8 @@
 package delivery
 
 import (
-	fstor "OnlineShopBackend/internal/filestorage"
-	fs "OnlineShopBackend/internal/filestorage/mocks"
+	fstor "OnlineShopBackend/internal/repository/filestorage"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"fmt"
 	"net/http"
