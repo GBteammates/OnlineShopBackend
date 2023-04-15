@@ -6,10 +6,10 @@ import (
 	"OnlineShopBackend/internal/delivery/router"
 	"OnlineShopBackend/internal/delivery/server"
 	"OnlineShopBackend/internal/delivery/user/password"
-	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
 	"OnlineShopBackend/internal/repository/cash"
+	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/usecase"
 	"OnlineShopBackend/logger"
 	"context"
@@ -60,14 +60,15 @@ func main() {
 	itemsCash := cash.NewItemsCash(redis, l)
 	categoriesCash := cash.NewCategoriesCash(redis, l)
 
-	itemUsecase := usecase.NewItemUsecase(itemStore, itemsCash, l)
+	filestorage := filestorage.NewOnDiskLocalStorage(cfg.ServerURL, cfg.FsPath, l)
+
+	itemUsecase := usecase.NewItemUsecase(itemStore, itemsCash, filestorage, l)
 	categoryUsecase := usecase.NewCategoryUsecase(categoryStore, categoriesCash, l)
 	userUsecase := usecase.NewUserUsecase(userStore, l)
 
 	cartUsecase := usecase.NewCartUseCase(cartStore, l)
 	orderUsecase := usecase.NewOrderUsecase(orderStore, lsug)
 
-	filestorage := filestorage.NewOnDiskLocalStorage(cfg.ServerURL, cfg.FsPath, l)
 	delivery := delivery.NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, l, filestorage, orderUsecase)
 
 	router := router.NewRouter(delivery, l)

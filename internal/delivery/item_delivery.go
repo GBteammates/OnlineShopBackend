@@ -28,7 +28,7 @@ type Options struct {
 	SortOrder string `form:"sortOrder"`
 }
 
-// SearchOptions is the structure for search 
+// SearchOptions is the structure for search
 // items and get items by category
 type SearchOptions struct {
 	Param string `form:"param"`
@@ -608,9 +608,9 @@ func (delivery *Delivery) SearchLine(c *gin.Context) {
 				Description: modelsItem.Category.Description,
 				Image:       modelsItem.Category.Image,
 			},
-			Price:       modelsItem.Price,
-			Vendor:      modelsItem.Vendor,
-			Images:      modelsItem.Images,
+			Price:  modelsItem.Price,
+			Vendor: modelsItem.Vendor,
+			Images: modelsItem.Images,
 			// If the item in the favourites, put true, if not, put false
 			IsFavourite: delivery.IsFavourite(c, modelsItem.Id),
 		}
@@ -660,7 +660,7 @@ func (delivery *Delivery) GetItemsByCategory(c *gin.Context) {
 		options.Limit = 10
 		delivery.logger.Sugar().Debugf("options limit is set in default value: %d", options.Limit)
 	}
-	
+
 	// If sorting parameters are not set, sorting by name in alphabetical order is set
 	if options.SortType == "" {
 		options.SortType = "name"
@@ -696,9 +696,9 @@ func (delivery *Delivery) GetItemsByCategory(c *gin.Context) {
 				Description: modelsItem.Category.Description,
 				Image:       modelsItem.Category.Image,
 			},
-			Price:       modelsItem.Price,
-			Vendor:      modelsItem.Vendor,
-			Images:      modelsItem.Images,
+			Price:  modelsItem.Price,
+			Vendor: modelsItem.Vendor,
+			Images: modelsItem.Images,
 			// If the item in the favourites, put true, if not, put false
 			IsFavourite: delivery.IsFavourite(c, modelsItem.Id),
 		}
@@ -768,8 +768,7 @@ func (delivery *Delivery) UploadItemImage(c *gin.Context) {
 	delivery.logger.Info("Read id", zap.String("id", id))
 	delivery.logger.Info("File len=", zap.Int32("len", int32(len(file))))
 
-	// Request item for which the picture is installed
-	item, err := delivery.itemUsecase.GetItem(ctx, uid)
+	err = delivery.itemUsecase.UploadItemImage(ctx, uid, name, file)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
@@ -777,31 +776,6 @@ func (delivery *Delivery) UploadItemImage(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-	}
-
-	// Put the picture in the file storage and get it url
-	path, err := delivery.filestorage.PutItemImage(id, name, file)
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInsufficientStorage, err)
-		return
-	}
-
-	// Add url of picture to the item pictures list
-	item.Images = append(item.Images, path)
-	for i, v := range item.Images {
-		// If the list of pictures has an empty line, remove it from the list
-		if v == "" {
-			item.Images = append(item.Images[:i], item.Images[i+1:]...)
-		}
-	}
-
-	err = delivery.itemUsecase.UpdateItem(ctx, item)
-	if err != nil {
-		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -849,8 +823,7 @@ func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
 
 	ctx := c.Request.Context()
 
-	// We get item from which the picture is deleted
-	item, err := delivery.itemUsecase.GetItem(ctx, uid)
+	err = delivery.itemUsecase.DeleteItemImage(ctx, uid, imageOptions.Name)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
@@ -862,33 +835,7 @@ func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
 		delivery.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
-
-	err = delivery.filestorage.DeleteItemImage(imageOptions.Id, imageOptions.Name)
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-
-	}
-
-	// Delete the address of the picture from the list of pictures of item
-	for idx, imagePath := range item.Images {
-		if strings.Contains(imagePath, imageOptions.Name) {
-			item.Images = append(item.Images[:idx], item.Images[idx+1:]...)
-			break
-		}
-	}
-	// If, after deleting the picture from the list, the list is empty - add 
-	// an empty line there so that item is correctly displayed on the frontend
-	if len(item.Images) == 0 {
-		item.Images = append(item.Images, "")
-	}
-	err = delivery.itemUsecase.UpdateItem(ctx, item)
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-	}
+	
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -1172,16 +1119,16 @@ func (delivery *Delivery) IsFavourite(c *gin.Context, itemId uuid.UUID) bool {
 	ctx := c.Request.Context()
 	// Suspend the map containing the id's of the favourite items of the current user
 	favIds, err := delivery.itemUsecase.GetFavouriteItemsId(ctx, userId)
-		if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-			delivery.logger.Debug("User haven't favourite items")
-			return false
-		}
-		if err != nil {
-			delivery.logger.Error(err.Error())
-			return false
-		}
-		favMap := *favIds
-	// Check if there is an item id in the list of favourites	
+	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
+		delivery.logger.Debug("User haven't favourite items")
+		return false
+	}
+	if err != nil {
+		delivery.logger.Error(err.Error())
+		return false
+	}
+	favMap := *favIds
+	// Check if there is an item id in the list of favourites
 	_, ok := favMap[itemId]
 	return ok
 }

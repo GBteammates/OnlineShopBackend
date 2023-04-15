@@ -77,7 +77,8 @@ func TestCreateItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().CreateItem(ctx, &testModelItem).Return(uuid.Nil, err)
@@ -101,7 +102,8 @@ func TestUpdateItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().UpdateItem(ctx, &testModelItem).Return(err)
@@ -123,7 +125,8 @@ func TestGetItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().GetItem(ctx, testItemId).Return(&testItemWithId, nil)
@@ -145,7 +148,8 @@ func TestItemsList(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 	testItemChan := make(chan models.Item, 1)
 	testItemChan <- testItemWithId
@@ -238,7 +242,8 @@ func TestSearchLine(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 
 	testItemChan := make(chan models.Item, 1)
@@ -331,7 +336,8 @@ func TestGetItemsByCategory(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 
 	testItemChan := make(chan models.Item, 1)
@@ -424,7 +430,8 @@ func TestItemsQuantity(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 
 	cash.EXPECT().CheckCash(ctx, itemsQuantityKey).Return(false)
@@ -467,10 +474,11 @@ func TestItemsQuantityInCategory(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 	key := testCategoryName + "Quantity"
-	
+
 	cash.EXPECT().CheckCash(ctx, key).Return(false)
 	itemRepo.EXPECT().ItemsByCategoryQuantity(ctx, testCategoryName).Return(-1, fmt.Errorf("error"))
 	res, err := usecase.ItemsQuantityInCategory(context.Background(), testCategoryName)
@@ -511,10 +519,10 @@ func TestItemsQuantityInSearch(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
-	key := testSearch+"Quantity"
-
+	key := testSearch + "Quantity"
 
 	cash.EXPECT().CheckCash(ctx, key).Return(false)
 	itemRepo.EXPECT().ItemsInSearchQuantity(ctx, testSearch).Return(-1, fmt.Errorf("error"))
@@ -556,7 +564,8 @@ func TestUpdateCash(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	cash.EXPECT().CheckCash(ctx, "ItemsList"+"nameasc").Return(false)
@@ -605,7 +614,8 @@ func TestUpdateItemsInCategoryCash(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	cashResults := make([]models.Item, 0, 1)
@@ -683,7 +693,8 @@ func TestDeleteItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().DeleteItem(ctx, testId).Return(err)
@@ -705,7 +716,8 @@ func TestAddFavouriteItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().AddFavouriteItem(ctx, testId, testItemId).Return(err)
@@ -729,7 +741,8 @@ func TestDeleteFavouriteItem(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	itemRepo.EXPECT().DeleteFavouriteItem(ctx, testId, testItemId).Return(err)
@@ -753,7 +766,8 @@ func TestGetFavouriteItems(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 	param = testId.String()
 	paramns := testId
@@ -832,11 +846,11 @@ func TestItemsQuantityInFavourite(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 	testFav := testId.String()
-	key := testFav+"Quantity"
-
+	key := testFav + "Quantity"
 
 	cash.EXPECT().CheckCash(ctx, key).Return(false)
 	itemRepo.EXPECT().ItemsInFavouriteQuantity(ctx, testId).Return(-1, fmt.Errorf("error"))
@@ -878,7 +892,8 @@ func TestUpdateFavouriteItemsCash(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	cashResults := make([]models.Item, 0, 1)
@@ -954,7 +969,8 @@ func TestSortItems(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 
 	testItems := []models.Item{
 		{Title: "A"},
@@ -1000,7 +1016,8 @@ func TestGetFavouriteItemsId(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := gomock.Any()
 
 	cash.EXPECT().CheckCash(ctx, testId.String()+"Fav").Return(false)
@@ -1085,7 +1102,8 @@ func TestUpdateFavIdsCash(t *testing.T) {
 	logger := zap.L()
 	itemRepo := mocks.NewMockItemStore(ctrl)
 	cash := mocks.NewMockIItemsCash(ctrl)
-	usecase := NewItemUsecase(itemRepo, cash, logger)
+	filestorage := mocks.NewMockFileStorager(ctrl)
+	usecase := NewItemUsecase(itemRepo, cash, filestorage, logger)
 	ctx := context.Background()
 
 	cash.EXPECT().CheckCash(ctx, testId.String()+"Fav").Return(false)

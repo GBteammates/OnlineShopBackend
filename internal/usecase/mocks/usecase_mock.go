@@ -94,6 +94,20 @@ func (mr *MockIItemUsecaseMockRecorder) DeleteItem(ctx, id interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItem", reflect.TypeOf((*MockIItemUsecase)(nil).DeleteItem), ctx, id)
 }
 
+// DeleteItemImage mocks base method.
+func (m *MockIItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteItemImage", ctx, id, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteItemImage indicates an expected call of DeleteItemImage.
+func (mr *MockIItemUsecaseMockRecorder) DeleteItemImage(ctx, id, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItemImage", reflect.TypeOf((*MockIItemUsecase)(nil).DeleteItemImage), ctx, id, name)
+}
+
 // GetFavouriteItems mocks base method.
 func (m *MockIItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	m.ctrl.T.Helper()
@@ -320,6 +334,20 @@ func (m *MockIItemUsecase) UpdateItemsInCategoryCash(ctx context.Context, newIte
 func (mr *MockIItemUsecaseMockRecorder) UpdateItemsInCategoryCash(ctx, newItem, op interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateItemsInCategoryCash", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateItemsInCategoryCash), ctx, newItem, op)
+}
+
+// UploadItemImage mocks base method.
+func (m *MockIItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadItemImage", ctx, id, name, file)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadItemImage indicates an expected call of UploadItemImage.
+func (mr *MockIItemUsecaseMockRecorder) UploadItemImage(ctx, id, name, file interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadItemImage", reflect.TypeOf((*MockIItemUsecase)(nil).UploadItemImage), ctx, id, name, file)
 }
 
 // MockICategoryUsecase is a mock of ICategoryUsecase interface.

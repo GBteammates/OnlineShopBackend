@@ -29,6 +29,8 @@ type IItemUsecase interface {
 	ItemsQuantityInSearch(ctx context.Context, search string) (int, error)
 	GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)
 	UpdateFavIdsCash(ctx context.Context, userId, itemId uuid.UUID, op string)
+	UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
+	DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error
 }
 
 type ICategoryUsecase interface {
