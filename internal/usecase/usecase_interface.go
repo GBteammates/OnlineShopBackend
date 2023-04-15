@@ -42,10 +42,12 @@ type ICategoryUsecase interface {
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
 	GetCategoryByName(ctx context.Context, name string) (*models.Category, error)
 	DeleteCategoryCash(ctx context.Context, name string) error
+	UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
+	DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error
 }
 
 type IOrderUsecase interface {
-	PlaceOrder(ctx context.Context, cart *models. Cart, user models.User, address models.UserAddress) (*models.Order, error)
+	PlaceOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error)
 	ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error
 	GetOrdersForUser(ctx context.Context, user *models.User) ([]models.Order, error)
 	DeleteOrder(ctx context.Context, order *models.Order) error
@@ -59,7 +61,6 @@ type ICartUsecase interface {
 	AddItemToCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
 	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
-
 }
 
 type IUserUsecase interface {

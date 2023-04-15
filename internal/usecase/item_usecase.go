@@ -933,13 +933,13 @@ func (usecase *ItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 	// Request item for which the picture is installed
 	item, err := usecase.itemStore.GetItem(ctx, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("error on get item: %w", err)
 	}
 
 	// Put the picture in the file storage and get it url
 	path, err := usecase.filestorage.PutItemImage(id.String(), name, file)
 	if err != nil {
-		return err
+		return fmt.Errorf("error on put image to filestorage: %w", err)
 	}
 
 	// Add url of picture to the item pictures list
@@ -957,7 +957,7 @@ func (usecase *ItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 	}
 	err = usecase.UpdateCash(ctx, item.Id, "update")
 	if err != nil {
-		usecase.logger.Debug(err.Error())
+		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}
 	return nil
 }
@@ -994,7 +994,7 @@ func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	}
 	err = usecase.UpdateCash(ctx, item.Id, "update")
 	if err != nil {
-		usecase.logger.Debug(err.Error())
+		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}
 	return nil
 }

@@ -4,9 +4,11 @@ import (
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
 	"OnlineShopBackend/internal/repository/cash"
+	"OnlineShopBackend/internal/repository/filestorage"
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,6 +24,7 @@ var (
 type CategoryUsecase struct {
 	categoryStore  repository.CategoryStore
 	categoriesCash cash.ICategoriesCash
+	filestorage    filestorage.FileStorager
 	logger         *zap.Logger
 }
 
@@ -222,5 +225,57 @@ func (usecase *CategoryUsecase) DeleteCategoryCash(ctx context.Context, name str
 		return err
 	}
 	usecase.logger.Info("Category cash deleted success")
+	return nil
+}
+
+func (usecase *CategoryUsecase) UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
+	usecase.logger.Sugar().Debugf("Enter in usecase UploadCategoryImage() with args: ctx, id: %v, name: %s, file", id, name)
+
+	path, err := usecase.filestorage.PutCategoryImage(id.String(), name, file)
+	if err != nil {
+		return fmt.Errorf("error on put image to filestorage: %w", err)
+	}
+
+	category, err := usecase.categoryStore.GetCategory(ctx, id)
+	if err != nil {
+		return fmt.Errorf("error on get category: %w", err)
+	}
+
+	category.Image = path
+
+	err = usecase.categoryStore.UpdateCategory(ctx, category)
+	if err != nil {
+		return fmt.Errorf("error on update category: %w", err)
+	}
+
+	err = usecase.UpdateCash(ctx, category.Id, "update")
+	if err != nil {
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+	} else {
+		usecase.logger.Info("Update cash success")
+	}
+	return nil
+}
+
+func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error {
+	usecase.logger.Sugar().Debugf("Enter in usecase DeleteCategoryImage() with args: ctx, id: %v, name: %s", id, name)
+
+	category, err := usecase.categoryStore.GetCategory(ctx, id)
+	if err != nil {
+		return fmt.Errorf("error on get category: %w", err)
+	}
+	if strings.Contains(category.Image, name) {
+		category.Image = ""
+	}
+	err = usecase.categoryStore.UpdateCategory(ctx, category)
+	if err != nil {
+		return fmt.Errorf("error on update category: %w", err)
+	}
+	err = usecase.UpdateCash(ctx, category.Id, "update")
+	if err != nil {
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+	} else {
+		usecase.logger.Info("Update cash success")
+	}
 	return nil
 }

@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-module/carbon/v2"
@@ -192,28 +191,16 @@ func (delivery *Delivery) UploadCategoryImage(c *gin.Context) {
 
 	delivery.logger.Info("Read id", zap.String("id", id))
 	delivery.logger.Info("File len=", zap.Int32("len", int32(len(file))))
-	path, err := delivery.filestorage.PutCategoryImage(id, name, file)
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInsufficientStorage, err)
-		return
-	}
+
 	ctx := c.Request.Context()
-	category, err := delivery.categoryUsecase.GetCategory(ctx, uid)
+
+	err = delivery.categoryUsecase.UploadCategoryImage(ctx, uid, name, file)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusNotFound, err)
 		return
 	}
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-	}
-	category.Image = path
-
-	err = delivery.categoryUsecase.UpdateCategory(ctx, category)
 	if err != nil {
 		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusInternalServerError, err)
@@ -270,22 +257,13 @@ func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
 		return
 	}
 
-	category, err := delivery.categoryUsecase.GetCategory(ctx, uid)
+	err = delivery.categoryUsecase.DeleteCategoryImage(ctx, uid, imageOptions.Name)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusNotFound, err)
 		return
 	}
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-	}
-	if strings.Contains(category.Image, imageOptions.Name) {
-		category.Image = ""
-	}
-	err = delivery.categoryUsecase.UpdateCategory(ctx, category)
 	if err != nil {
 		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusInternalServerError, err)
