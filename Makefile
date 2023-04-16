@@ -128,8 +128,8 @@ mock_cash:
 mock_usecase:
 	mockgen -source=internal/usecase/usecase_interface.go -destination=internal/usecase/mocks/usecase_mock.go -package=mocks
 
-mock_filestorage:
-	mockgen -source=internal/filestorage/diskFileStorage.go -destination=internal/filestorage/mocks/filestorage_mock.go -package=mocks FileStorager
+mock_fs:
+	mockgen -source=internal/repository/filestorage/diskFileStorage.go -destination=internal/repository/mocks/filestorage_mock.go -package=mocks FileStorager
 
 up:
 	docker-compose up -d
