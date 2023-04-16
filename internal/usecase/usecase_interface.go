@@ -17,18 +17,18 @@ type IItemUsecase interface {
 	ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error)
 	SearchLine(ctx context.Context, param string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
 	GetItemsByCategory(ctx context.Context, categoryName string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
-	UpdateCash(ctx context.Context, id uuid.UUID, op string) error
-	UpdateItemsInCategoryCash(ctx context.Context, newItem *models.Item, op string) error
+	UpdateCache(ctx context.Context, id uuid.UUID, op string) error
+	UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error
 	DeleteItem(ctx context.Context, id uuid.UUID) error
 	AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
 	DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
 	GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
 	ItemsQuantityInFavourite(ctx context.Context, userId uuid.UUID) (int, error)
-	UpdateFavouriteItemsCash(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string)
+	UpdateFavouriteItemsCache(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string)
 	SortItems(items []models.Item, sortType string, sortOrder string)
 	ItemsQuantityInSearch(ctx context.Context, search string) (int, error)
 	GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)
-	UpdateFavIdsCash(ctx context.Context, userId, itemId uuid.UUID, op string)
+	UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string)
 	UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
 	DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error
 }
@@ -38,10 +38,10 @@ type ICategoryUsecase interface {
 	UpdateCategory(ctx context.Context, category *models.Category) error
 	GetCategory(ctx context.Context, id uuid.UUID) (*models.Category, error)
 	GetCategoryList(ctx context.Context) ([]models.Category, error)
-	UpdateCash(ctx context.Context, id uuid.UUID, op string) error
+	UpdateCache(ctx context.Context, id uuid.UUID, op string) error
 	DeleteCategory(ctx context.Context, id uuid.UUID) error
 	GetCategoryByName(ctx context.Context, name string) (*models.Category, error)
-	DeleteCategoryCash(ctx context.Context, name string) error
+	DeleteCategoryCache(ctx context.Context, name string) error
 	UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
 	DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error
 }

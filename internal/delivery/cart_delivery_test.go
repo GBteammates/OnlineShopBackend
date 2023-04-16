@@ -2,10 +2,8 @@ package delivery
 
 import (
 	"OnlineShopBackend/internal/delivery/cart"
-	"OnlineShopBackend/internal/delivery/category"
-	"OnlineShopBackend/internal/delivery/item"
-	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"bytes"
 	"context"
@@ -39,45 +37,9 @@ var (
 			testModelItemWithQuantity,
 		},
 	}
-	testModelItem = models.Item{
-		Id:     testId,
-		Title:  "test",
-		Price:  1,
-		Images: []string{"test"},
-	}
 	testModelItemWithQuantity = models.ItemWithQuantity{
 		Quantity: 1,
 	}
-
-	testCart = cart.Cart{
-		Id:     testCartId.String(),
-		UserId: testUserId.String(),
-		Items: []cart.CartItem{
-			testCartItem,
-		},
-	}
-	testCartItem = cart.CartItem{
-		Item:     testItem,
-		Quantity: testCartQuantity,
-	}
-	testItem = item.OutItem{
-		Id:          testId.String(),
-		Title:       "test",
-		Description: "test",
-		Category:    testCartCategory,
-		Price:       1,
-		Vendor:      "test",
-		Images:      []string{"test"},
-	}
-	testCartCategory = category.Category{
-		Id:          testId.String(),
-		Name:        "Test",
-		Description: "Test",
-	}
-	testCartQuantity = cart.Quantity{
-		Quantity: 1,
-	}
-
 	testWrongShortCart = WrongShortCart{
 		CartId: 5,
 		ItemId: 5,
@@ -85,15 +47,6 @@ var (
 	testShortCart = cart.ShortCart{
 		CartId: testCartId.String(),
 		ItemId: testId.String(),
-	}
-	testWrongCartIdShortCart = cart.ShortCart{
-		CartId: testCartId.String() + " ",
-		ItemId: testId.String(),
-	}
-
-	testWrongItemIdShortCart = cart.ShortCart{
-		CartId: testCartId.String(),
-		ItemId: testId.String() + " ",
 	}
 )
 

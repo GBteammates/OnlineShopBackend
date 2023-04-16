@@ -1,4 +1,4 @@
-package cash
+package redis
 
 import (
 	"context"
@@ -9,15 +9,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type RedisCash struct {
+type RedisCache struct {
 	*redis.Client
 	TTL    time.Duration
 	logger *zap.Logger
 }
 
-// NewRedisCash initialize redis client
-func NewRedisCash(host, port string, ttl time.Duration, logger *zap.Logger) (*RedisCash, error) {
-	logger.Sugar().Debugf("Enter in NewRedisCash() with args: host: %s, port: %s, ttl: %v, logger", host, port, ttl)
+// NewRedisCache initialize redis client
+func NewRedisCache(host, port string, ttl time.Duration, logger *zap.Logger) (*RedisCache, error) {
+	logger.Sugar().Debugf("Enter in NewRedisCache() with args: host: %s, port: %s, ttl: %v, logger", host, port, ttl)
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", host, port),
 		Password: "", // no password set
@@ -28,25 +28,25 @@ func NewRedisCash(host, port string, ttl time.Duration, logger *zap.Logger) (*Re
 		return nil, fmt.Errorf("try to ping to redis: %w", err)
 	}
 	logger.Debug("Redis Client ping success")
-	cashTTL := ttl * time.Hour
-	c := &RedisCash{
+	cacheTTL := ttl * time.Hour
+	c := &RedisCache{
 		Client: client,
-		TTL:    cashTTL,
+		TTL:    cacheTTL,
 		logger: logger,
 	}
 	return c, nil
 }
 
 // ShutDown is func for graceful shutdown redis connection
-func (cash *RedisCash) ShutDown(timeout int) error {
-	cash.logger.Sugar().Debugf("Enter in cash ShutDown() with args: timeout: %d", timeout)
+func (cache *RedisCache) ShutDown(timeout int) error {
+	cache.logger.Sugar().Debugf("Enter in cache ShutDown() with args: timeout: %d", timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
-	status := cash.Shutdown(ctx)
+	status := cache.Shutdown(ctx)
 	result, err := status.Result()
 	if err != nil {
 		return err
 	}
-	cash.logger.Info(result)
+	cache.logger.Info(result)
 	return nil
 }

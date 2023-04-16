@@ -3,7 +3,7 @@ package usecase
 import (
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
-	"OnlineShopBackend/internal/repository/cash"
+	"OnlineShopBackend/internal/repository/cache"
 	"OnlineShopBackend/internal/repository/filestorage"
 	"context"
 	"fmt"
@@ -23,14 +23,14 @@ var (
 
 type CategoryUsecase struct {
 	categoryStore  repository.CategoryStore
-	categoriesCash cash.ICategoriesCash
+	categoriesCache cache.ICategoriesCache
 	filestorage    filestorage.FileStorager
 	logger         *zap.Logger
 }
 
-func NewCategoryUsecase(store repository.CategoryStore, cash cash.ICategoriesCash, logger *zap.Logger) ICategoryUsecase {
+func NewCategoryUsecase(store repository.CategoryStore, cache cache.ICategoriesCache, logger *zap.Logger) ICategoryUsecase {
 	logger.Debug("Enter in usecase NewCategoryUsecase()")
-	return &CategoryUsecase{categoryStore: store, categoriesCash: cash, logger: logger}
+	return &CategoryUsecase{categoryStore: store, categoriesCache: cache, logger: logger}
 }
 
 // / CreateCategory call database method and returns id of created category or error
@@ -40,11 +40,11 @@ func (usecase *CategoryUsecase) CreateCategory(ctx context.Context, category *mo
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create category: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, id, "create")
+	err = usecase.UpdateCache(ctx, id, "create")
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cash success")
+		usecase.logger.Info("Update cache success")
 	}
 	return id, nil
 }
@@ -56,11 +56,11 @@ func (usecase *CategoryUsecase) UpdateCategory(ctx context.Context, category *mo
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, category.Id, "update")
+	err = usecase.UpdateCache(ctx, category.Id, "update")
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cash success")
+		usecase.logger.Info("Update cache success")
 	}
 	return nil
 }
@@ -84,7 +84,7 @@ func (usecase *CategoryUsecase) GetCategoryList(ctx context.Context) ([]models.C
 	defer cancel()
 
 	// Сheck whether there is a cache with a list of categories
-	if ok := usecase.categoriesCash.CheckCash(ctxT, categoriesListKey); !ok {
+	if ok := usecase.categoriesCache.CheckCache(ctxT, categoriesListKey); !ok {
 		// If cache does not exist, request a list of categories from the database
 		categoryIncomingChan, err := usecase.categoryStore.GetCategoryList(ctx)
 		if err != nil {
@@ -95,18 +95,18 @@ func (usecase *CategoryUsecase) GetCategoryList(ctx context.Context) ([]models.C
 			categories = append(categories, category)
 		}
 		// Create a cache with a list of categories
-		err = usecase.categoriesCash.CreateCategoriesListCash(ctxT, categories, categoriesListKey)
+		err = usecase.categoriesCache.CreateCategoriesListСache(ctxT, categories, categoriesListKey)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create categories list cash with key: %s, error: %v", categoriesListKey, err)
+			usecase.logger.Sugar().Warnf("error on create categories list cache with key: %s, error: %v", categoriesListKey, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create categories list cash with key: %s success", categoriesListKey)
+			usecase.logger.Sugar().Infof("Create categories list cache with key: %s success", categoriesListKey)
 		}
 	}
 
 	// Get a list of categories from cache
-	categories, err := usecase.categoriesCash.GetCategoriesListCash(ctxT, categoriesListKey)
+	categories, err := usecase.categoriesCache.GetCategoriesListCache(ctxT, categoriesListKey)
 	if err != nil {
-		usecase.logger.Sugar().Warnf("error on get cash with key: %s, err: %v", categoriesListKey, err)
+		usecase.logger.Sugar().Warnf("error on get cache with key: %s, err: %v", categoriesListKey, err)
 		// If error on get cache, request a list of categories from the database
 		categoryIncomingChan, err := usecase.categoryStore.GetCategoryList(ctx)
 		if err != nil {
@@ -120,7 +120,7 @@ func (usecase *CategoryUsecase) GetCategoryList(ctx context.Context) ([]models.C
 		usecase.logger.Info("Get category list from db success")
 		return categories, nil
 	}
-	usecase.logger.Info("Get category list from cash success")
+	usecase.logger.Info("Get category list from cache success")
 	return categories, nil
 }
 
@@ -131,9 +131,9 @@ func (usecase *CategoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID
 	if err != nil {
 		return err
 	}
-	err = usecase.UpdateCash(ctx, id, "delete")
+	err = usecase.UpdateCache(ctx, id, "delete")
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	}
 	usecase.logger.Info("Delete category success")
 	return nil
@@ -150,12 +150,12 @@ func (usecase *CategoryUsecase) GetCategoryByName(ctx context.Context, name stri
 	return category, nil
 }
 
-// UpdateCash updating cash when creating or updating category
-func (usecase *CategoryUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op string) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCash() with args: ctx, id: %v, op: %s", id, op)
+// UpdateCache updating cache when creating or updating category
+func (usecase *CategoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
+	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
 	// If the cache with such a key does not exist, we return the error, there is nothing to update
-	if !usecase.categoriesCash.CheckCash(ctx, categoriesListKey) {
-		return fmt.Errorf("cash is not exists")
+	if !usecase.categoriesCache.CheckCache(ctx, categoriesListKey) {
+		return fmt.Errorf("cache is not exists")
 	}
 
 	// Get a category from the database for updating in the cache
@@ -170,9 +170,9 @@ func (usecase *CategoryUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op
 		}
 	}
 	// Get a list of categories from cache
-	categories, err := usecase.categoriesCash.GetCategoriesListCash(ctx, categoriesListKey)
+	categories, err := usecase.categoriesCache.GetCategoriesListCache(ctx, categoriesListKey)
 	if err != nil {
-		return fmt.Errorf("error on get cash: %w", err)
+		return fmt.Errorf("error on get cache: %w", err)
 	}
 	// Change list of categories for update the cache
 	if op == "update" {
@@ -197,34 +197,34 @@ func (usecase *CategoryUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op
 	// Sort list of categories by name in alphabetical order
 	sort.Slice(categories, func(i, j int) bool { return categories[i].Name < categories[j].Name })
 	// Create new cache with list of categories
-	err = usecase.categoriesCash.CreateCategoriesListCash(ctx, categories, categoriesListKey)
+	err = usecase.categoriesCache.CreateCategoriesListСache(ctx, categories, categoriesListKey)
 	if err != nil {
 		return err
 	}
-	usecase.logger.Info("Category cash update success")
+	usecase.logger.Info("Category cache update success")
 	return nil
 }
 
-// DeleteCategoryCash deleted cash after deleting categories
-func (usecase *CategoryUsecase) DeleteCategoryCash(ctx context.Context, name string) error {
-	usecase.logger.Debug(fmt.Sprintf("Enter in usecase DeleteCategoryCash() with args: ctx, name: %s", name))
+// DeleteCategoryCache deleted cache after deleting categories
+func (usecase *CategoryUsecase) DeleteCategoryCache(ctx context.Context, name string) error {
+	usecase.logger.Debug(fmt.Sprintf("Enter in usecase DeleteCategoryCache() with args: ctx, name: %s", name))
 	// keys is a list of cache keys with items in deleted category sorting by name and price
 	keys := []string{name + "nameasc", name + "namedesc", name + "priceasc", name + "pricedesc"}
 	for _, key := range keys {
 		// For each key from list delete cache
-		err := usecase.categoriesCash.DeleteCash(ctx, key)
+		err := usecase.categoriesCache.DeleteCache(ctx, key)
 		if err != nil {
-			usecase.logger.Error(fmt.Sprintf("error on delete cash with key: %s, error is %v", key, err))
+			usecase.logger.Error(fmt.Sprintf("error on delete cache with key: %s, error is %v", key, err))
 			return err
 		}
 	}
 	// Delete cache with quantity of items in deleted category
-	err := usecase.categoriesCash.DeleteCash(ctx, name+"Quantity")
+	err := usecase.categoriesCache.DeleteCache(ctx, name+"Quantity")
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on delete cash with key: %s, error is %v", name, err))
+		usecase.logger.Error(fmt.Sprintf("error on delete cache with key: %s, error is %v", name, err))
 		return err
 	}
-	usecase.logger.Info("Category cash deleted success")
+	usecase.logger.Info("Category cache deleted success")
 	return nil
 }
 
@@ -248,11 +248,11 @@ func (usecase *CategoryUsecase) UploadCategoryImage(ctx context.Context, id uuid
 		return fmt.Errorf("error on update category: %w", err)
 	}
 
-	err = usecase.UpdateCash(ctx, category.Id, "update")
+	err = usecase.UpdateCache(ctx, category.Id, "update")
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cash success")
+		usecase.logger.Info("Update cache success")
 	}
 	return nil
 }
@@ -271,11 +271,11 @@ func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, category.Id, "update")
+	err = usecase.UpdateCache(ctx, category.Id, "update")
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cash success")
+		usecase.logger.Info("Update cache success")
 	}
 	return nil
 }

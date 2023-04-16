@@ -294,18 +294,18 @@ func (delivery *Delivery) UpdateItem(c *gin.Context) {
 		return
 	}
 	// Update the cache of the item list in the category
-	err = delivery.itemUsecase.UpdateItemsInCategoryCash(ctx, updatingItem, "create")
+	err = delivery.itemUsecase.UpdateItemsInCategoryCache(ctx, updatingItem, "create")
 	if err != nil {
 		delivery.logger.Warn(err.Error())
 	} else {
-		delivery.logger.Info("Category cash of updating item updated success")
+		delivery.logger.Info("Category cache of updating item updated success")
 	}
 	if itemBeforUpdate.Category.Id != categoryUid {
-		err = delivery.itemUsecase.UpdateItemsInCategoryCash(ctx, itemBeforUpdate, "delete")
+		err = delivery.itemUsecase.UpdateItemsInCategoryCache(ctx, itemBeforUpdate, "delete")
 		if err != nil {
 			delivery.logger.Warn(err.Error())
 		} else {
-			delivery.logger.Info("Category cash of old item updated success")
+			delivery.logger.Info("Category cache of old item updated success")
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -835,7 +835,7 @@ func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
 		delivery.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -899,9 +899,9 @@ func (delivery *Delivery) DeleteItem(c *gin.Context) {
 	}
 
 	// Update the item list cache in the deleting item's category
-	err = delivery.itemUsecase.UpdateItemsInCategoryCash(ctx, deletedItem, "delete")
+	err = delivery.itemUsecase.UpdateItemsInCategoryCache(ctx, deletedItem, "delete")
 	if err != nil {
-		delivery.logger.Sugar().Errorf("error on update cash in category items list: %v", err)
+		delivery.logger.Sugar().Errorf("error on update cache in category items list: %v", err)
 	}
 
 	// If item has pictures, we remove them from the storage of pictures

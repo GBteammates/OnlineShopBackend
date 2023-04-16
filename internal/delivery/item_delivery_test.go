@@ -3,8 +3,8 @@ package delivery
 import (
 	"OnlineShopBackend/internal/delivery/category"
 	"OnlineShopBackend/internal/delivery/item"
-	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
+	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/usecase/mocks"
 	"bytes"
 	"context"
@@ -187,14 +187,6 @@ var (
 		Price:  10,
 		Vendor: "testVendor",
 		Images: []string{"testName"},
-	}
-	testModelsItemWithImage35 = models.Item{
-		Id:          testId,
-		Title:       "testTitle",
-		Description: "testDescription",
-		Price:       10,
-		Vendor:      "testVendor",
-		Images:      []string{""},
 	}
 	testModelsItemWithImage2 = models.Item{
 		Id:          testId,
@@ -1195,7 +1187,7 @@ func TestDeleteItem(t *testing.T) {
 	}
 	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&testModelsItemWithImage, nil)
 	itemUsecase.EXPECT().DeleteItem(ctx, testId).Return(nil)
-	itemUsecase.EXPECT().UpdateItemsInCategoryCash(ctx, &testModelsItemWithImage, "delete").Return(fmt.Errorf("error"))
+	itemUsecase.EXPECT().UpdateItemsInCategoryCache(ctx, &testModelsItemWithImage, "delete").Return(fmt.Errorf("error"))
 	filestorage.EXPECT().DeleteItemImagesFolderById(testId.String()).Return(fmt.Errorf("error"))
 	delivery.DeleteItem(c)
 	require.Equal(t, 200, w.Code)

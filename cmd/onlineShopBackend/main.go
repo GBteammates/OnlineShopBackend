@@ -8,7 +8,7 @@ import (
 	"OnlineShopBackend/internal/delivery/user/password"
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
-	"OnlineShopBackend/internal/repository/cash"
+	redisCache "OnlineShopBackend/internal/repository/cache/redis"
 	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/usecase"
 	"OnlineShopBackend/logger"
@@ -53,17 +53,17 @@ func main() {
 	cartStore := repository.NewCartStore(pgstore, lsug)
 	orderStore := repository.NewOrderRepo(pgstore, lsug)
 
-	redis, err := cash.NewRedisCash(cfg.CashHost, cfg.CashPort, time.Duration(cfg.CashTTL), l)
+	redis, err := redisCache.NewRedisCache(cfg.CashHost, cfg.CashPort, time.Duration(cfg.CashTTL), l)
 	if err != nil {
 		log.Fatalf("can't initialize cash: %v", err)
 	}
-	itemsCash := cash.NewItemsCash(redis, l)
-	categoriesCash := cash.NewCategoriesCash(redis, l)
+	itemsCache := redisCache.NewItemsCache(redis, l)
+	categoriesCache := redisCache.NewCategoriesСache(redis, l)
 
 	filestorage := filestorage.NewOnDiskLocalStorage(cfg.ServerURL, cfg.FsPath, l)
 
-	itemUsecase := usecase.NewItemUsecase(itemStore, itemsCash, filestorage, l)
-	categoryUsecase := usecase.NewCategoryUsecase(categoryStore, categoriesCash, l)
+	itemUsecase := usecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
 	userUsecase := usecase.NewUserUsecase(userStore, l)
 
 	cartUsecase := usecase.NewCartUseCase(cartStore, l)
@@ -79,7 +79,7 @@ func main() {
 	}
 	server := server.NewServer(cfg.Port, router, l, serverOptions)
 
-	err = createCashOnStartService(ctx, categoryUsecase, itemUsecase, l)
+	err = createCacheOnStartService(ctx, categoryUsecase, itemUsecase, l)
 	if err != nil {
 		l.Sugar().Fatalf("error on create cash on start: %v", err)
 	}
@@ -120,7 +120,7 @@ func main() {
 	cancel()
 }
 
-func createCashOnStartService(ctx context.Context, categoryUsecase usecase.ICategoryUsecase, itemUsecase usecase.IItemUsecase, l *zap.Logger) error {
+func createCacheOnStartService(ctx context.Context, categoryUsecase usecase.ICategoryUsecase, itemUsecase usecase.IItemUsecase, l *zap.Logger) error {
 	l.Debug("Enter in main createCashOnStartService")
 	l.Debug("Start create cash...")
 	categoryList, err := categoryUsecase.GetCategoryList(ctx)

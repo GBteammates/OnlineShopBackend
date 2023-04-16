@@ -3,7 +3,7 @@ package usecase
 import (
 	"OnlineShopBackend/internal/models"
 	"OnlineShopBackend/internal/repository"
-	"OnlineShopBackend/internal/repository/cash"
+	"OnlineShopBackend/internal/repository/cache"
 	"OnlineShopBackend/internal/repository/filestorage"
 	"context"
 	"errors"
@@ -30,16 +30,16 @@ const (
 
 type ItemUsecase struct {
 	itemStore   repository.ItemStore
-	itemCash    cash.IItemsCash
+	itemCache   cache.IItemsCache
 	filestorage filestorage.FileStorager
 	logger      *zap.Logger
 }
 
-func NewItemUsecase(itemStore repository.ItemStore, itemCash cash.IItemsCash, filestorage filestorage.FileStorager, logger *zap.Logger) IItemUsecase {
+func NewItemUsecase(itemStore repository.ItemStore, itemCache cache.IItemsCache, filestorage filestorage.FileStorager, logger *zap.Logger) IItemUsecase {
 	logger.Debug("Enter in usecase NewItemUsecase()")
 	return &ItemUsecase{
 		itemStore:   itemStore,
-		itemCash:    itemCash,
+		itemCache:   itemCache,
 		filestorage: filestorage,
 		logger:      logger}
 }
@@ -51,7 +51,7 @@ func (usecase *ItemUsecase) CreateItem(ctx context.Context, item *models.Item) (
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create item: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, id, "create")
+	err = usecase.UpdateCache(ctx, id, "create")
 	if err != nil {
 		usecase.logger.Debug(err.Error())
 	}
@@ -65,7 +65,7 @@ func (usecase *ItemUsecase) UpdateItem(ctx context.Context, item *models.Item) e
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, item.Id, "update")
+	err = usecase.UpdateCache(ctx, item.Id, "update")
 	if err != nil {
 		usecase.logger.Debug(err.Error())
 	}
@@ -89,8 +89,8 @@ func (usecase *ItemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UU
 	if err != nil {
 		return err
 	}
-	usecase.UpdateFavouriteItemsCash(ctx, userId, itemId, "add")
-	usecase.UpdateFavIdsCash(ctx, userId, itemId, "add")
+	usecase.UpdateFavouriteItemsCache(ctx, userId, itemId, "add")
+	usecase.UpdateFavIdsCache(ctx, userId, itemId, "add")
 	return nil
 }
 
@@ -101,8 +101,8 @@ func (usecase *ItemUsecase) DeleteFavouriteItem(ctx context.Context, userId uuid
 	if err != nil {
 		return err
 	}
-	usecase.UpdateFavouriteItemsCash(ctx, userId, itemId, "delete")
-	usecase.UpdateFavIdsCash(ctx, userId, itemId, "delete")
+	usecase.UpdateFavouriteItemsCache(ctx, userId, itemId, "delete")
+	usecase.UpdateFavIdsCache(ctx, userId, itemId, "delete")
 	return nil
 }
 
@@ -113,22 +113,22 @@ func (usecase *ItemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error 
 	if err != nil {
 		return err
 	}
-	err = usecase.UpdateCash(ctx, id, "delete")
+	err = usecase.UpdateCache(ctx, id, "delete")
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cash: %v", err))
+		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	}
 	return nil
 }
 
-// ItemsQuantity check cash and if cash not exists call database
-// method and write in cash and returns quantity of all items
+// ItemsQuantity check cache and if cache not exists call database
+// method and write in cache and returns quantity of all items
 func (usecase *ItemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 	usecase.logger.Debug("Enter in usecase ItemsQuantity() with args: ctx")
 	// Context with timeout so as not to wait for an answer from the cache for too long
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
-	if ok := usecase.itemCash.CheckCash(ctxT, itemsQuantityKey); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, itemsQuantityKey); !ok {
 		// If a cache with the quantity of items does not exist,
 		// check whether there is a cache with a list of items in the basic sorting
 		quantity, err := usecase.itemStore.ItemsListQuantity(ctx)
@@ -136,14 +136,14 @@ func (usecase *ItemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 			usecase.logger.Sugar().Errorf("error on get items list quantity from database: %v", err)
 			return -1, err
 		}
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, quantity, itemsQuantityKey)
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, quantity, itemsQuantityKey)
 		if err != nil {
 			usecase.logger.Sugar().Warnf("error on create items quantity cache with key: %s, err: %v", itemsQuantityKey, err)
 		}
 		usecase.logger.Info("Get items quantity success")
 		return quantity, nil
 	}
-	quantity, err := usecase.itemCash.GetItemsQuantityCash(ctxT, itemsQuantityKey)
+	quantity, err := usecase.itemCache.GetItemsQuantityCache(ctxT, itemsQuantityKey)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on get items quantity cache with key: %s, error: %v", itemsQuantityKey, err)
 		// If get cache impossible get items quantity from database
@@ -159,8 +159,8 @@ func (usecase *ItemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 	return quantity, nil
 }
 
-// ItemsQuantityInCategory check cash and if cash not exists call database
-// method and write in cash and returns quantity of items in category
+// ItemsQuantityInCategory check cache and if cache not exists call database
+// method and write in cache and returns quantity of items in category
 func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInCategory() with args: ctx, categoryName: %s", categoryName)
 	key := categoryName + "Quantity"
@@ -168,7 +168,7 @@ func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categor
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
-	if ok := usecase.itemCash.CheckCash(ctxT, key); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
 		// If a cache with the quantity of items does not exist,
 		// check whether there is a cache with a list of items in the basic sorting
 		quantity, err := usecase.itemStore.ItemsByCategoryQuantity(ctx, categoryName)
@@ -176,14 +176,14 @@ func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categor
 			usecase.logger.Sugar().Errorf("error on get items quantity in category from database: %v", err)
 			return -1, err
 		}
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, quantity, key)
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, quantity, key)
 		if err != nil {
 			usecase.logger.Sugar().Warnf("error on create items quantity in category  cache with key: %s, err: %v", key, err)
 		}
 		usecase.logger.Info("Get items quantity in category success")
 		return quantity, nil
 	}
-	quantity, err := usecase.itemCash.GetItemsQuantityCash(ctxT, key)
+	quantity, err := usecase.itemCache.GetItemsQuantityCache(ctxT, key)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on get items quantity in category cache with key: %s, error: %v", key, err)
 		// If get cache impossible get items quantity from database
@@ -199,8 +199,8 @@ func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categor
 	return quantity, nil
 }
 
-// ItemsQuantityInSearch check cash and if cash not exists call database method and write
-// in cash and returns quantity of items in search request
+// ItemsQuantityInSearch check cache and if cache not exists call database method and write
+// in cache and returns quantity of items in search request
 func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchRequest string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInSearch() with args: ctx, searchRequest: %s", searchRequest)
 	key := searchRequest + "Quantity"
@@ -208,7 +208,7 @@ func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchReq
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
-	if ok := usecase.itemCash.CheckCash(ctxT, key); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
 		// If a cache with the quantity of items does not exist,
 		// check whether there is a cache with a list of items in the basic sorting
 		quantity, err := usecase.itemStore.ItemsInSearchQuantity(ctx, searchRequest)
@@ -216,14 +216,14 @@ func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchReq
 			usecase.logger.Sugar().Errorf("error on get items quantity in search by search request: %s from database: %v", searchRequest, err)
 			return -1, err
 		}
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, quantity, key)
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, quantity, key)
 		if err != nil {
 			usecase.logger.Sugar().Warnf("error on create items quantity in search cache with key: %s, err: %v", key, err)
 		}
 		usecase.logger.Info("Get items quantity in search success")
 		return quantity, nil
 	}
-	quantity, err := usecase.itemCash.GetItemsQuantityCash(ctxT, key)
+	quantity, err := usecase.itemCache.GetItemsQuantityCache(ctxT, key)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on get items quantity in search cache with key: %s, error: %v", key, err)
 		// If get cache impossible get items quantity from database
@@ -239,8 +239,8 @@ func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchReq
 	return quantity, nil
 }
 
-// ItemsQuantityInFavourite check cash and if cash not exists call database
-// method and write in cash and returns quantity of items in favourite
+// ItemsQuantityInFavourite check cache and if cache not exists call database
+// method and write in cache and returns quantity of items in favourite
 func (usecase *ItemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId uuid.UUID) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteQuantity() with args: ctx, userId: %v", userId)
 	key := userId.String() + "Quantity"
@@ -248,7 +248,7 @@ func (usecase *ItemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
-	if ok := usecase.itemCash.CheckCash(ctxT, key); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
 		// If a cache with the quantity of items does not exist,
 		// check whether there is a cache with a list of items in the basic sorting
 		quantity, err := usecase.itemStore.ItemsInFavouriteQuantity(ctx, userId)
@@ -256,14 +256,14 @@ func (usecase *ItemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId
 			usecase.logger.Sugar().Errorf("error on get items quantity in favourite with userId: %v from database: %v", userId, err)
 			return -1, err
 		}
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, quantity, key)
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, quantity, key)
 		if err != nil {
 			usecase.logger.Sugar().Warnf("error on create items quantity in favourite cache with key: %s, err: %v", key, err)
 		}
 		usecase.logger.Info("Get items quantity in favourite success")
 		return quantity, nil
 	}
-	quantity, err := usecase.itemCash.GetItemsQuantityCash(ctxT, key)
+	quantity, err := usecase.itemCache.GetItemsQuantityCache(ctxT, key)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on create items quantity in favourite cache with key: %s, err: %v", key, err)
 		// If get cache impossible get items quantity from database
@@ -288,7 +288,7 @@ func (usecase *ItemUsecase) ItemsList(ctx context.Context, limitOptions map[stri
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
 	sortType, sortOrder := sortOptions["sortType"], sortOptions["sortOrder"]
 	// Check whether there is a cache with that name
-	if ok := usecase.itemCash.CheckCash(ctxT, itemsListKey+sortType+sortOrder); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, itemsListKey+sortType+sortOrder); !ok {
 		// If the cache does not exist, request a list of items from the database
 		itemIncomingChan, err := usecase.itemStore.ItemsList(ctx)
 		if err != nil {
@@ -301,24 +301,24 @@ func (usecase *ItemUsecase) ItemsList(ctx context.Context, limitOptions map[stri
 		// Sort the list of items based on the sorting parameters
 		usecase.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items
-		err = usecase.itemCash.CreateItemsCash(ctxT, items, itemsListKey+sortType+sortOrder)
+		err = usecase.itemCache.CreateItemsCache(ctxT, items, itemsListKey+sortType+sortOrder)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create items list cash with key: %s, error: %v", itemsListKey+sortType+sortOrder, err)
+			usecase.logger.Sugar().Warnf("error on create items list cache with key: %s, error: %v", itemsListKey+sortType+sortOrder, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create items list cash with key: %s success", itemsListKey+sortType+sortOrder)
+			usecase.logger.Sugar().Infof("Create items list cache with key: %s success", itemsListKey+sortType+sortOrder)
 		}
 		// Create a cache with a quantity of items in list
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, len(items), itemsQuantityKey)
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, len(items), itemsQuantityKey)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create items quantity cash with key: %s, error: %v", itemsQuantityKey, err)
+			usecase.logger.Sugar().Warnf("error on create items quantity cache with key: %s, error: %v", itemsQuantityKey, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create items quantity cash with key: %s success", itemsQuantityKey)
+			usecase.logger.Sugar().Infof("Create items quantity cache with key: %s success", itemsQuantityKey)
 		}
 	}
 	// Get items list from cache
-	items, err := usecase.itemCash.GetItemsCash(ctxT, itemsListKey+sortType+sortOrder)
+	items, err := usecase.itemCache.GetItemsCache(ctxT, itemsListKey+sortType+sortOrder)
 	if err != nil {
-		usecase.logger.Sugar().Warnf("error on get cash with key: %s, err: %v", itemsListKey+sortType+sortOrder, err)
+		usecase.logger.Sugar().Warnf("error on get cache with key: %s, err: %v", itemsListKey+sortType+sortOrder, err)
 		// If error on get cache, request a list of items from the database
 		itemIncomingChan, err := usecase.itemStore.ItemsList(ctx)
 		if err != nil {
@@ -362,7 +362,7 @@ func (usecase *ItemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 	sortType, sortOrder := sortOptions["sortType"], sortOptions["sortOrder"]
 
 	// Check whether there is a cache of items in category
-	if ok := usecase.itemCash.CheckCash(ctxT, categoryName+sortType+sortOrder); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, categoryName+sortType+sortOrder); !ok {
 		// If the cache does not exist, request a list of items in
 		// category from the database
 		itemIncomingChan, err := usecase.itemStore.GetItemsByCategory(ctx, categoryName)
@@ -376,22 +376,22 @@ func (usecase *ItemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 		// Sort the list of items in category based on the sorting parameters
 		usecase.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in category
-		err = usecase.itemCash.CreateItemsCash(ctxT, items, categoryName+sortType+sortOrder)
+		err = usecase.itemCache.CreateItemsCache(ctxT, items, categoryName+sortType+sortOrder)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create items cash with key: %s, error: %v", categoryName+sortType+sortOrder, err)
+			usecase.logger.Sugar().Warnf("error on create items cache with key: %s, error: %v", categoryName+sortType+sortOrder, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create items cash with key: %s success", categoryName+sortType+sortOrder)
+			usecase.logger.Sugar().Infof("Create items cache with key: %s success", categoryName+sortType+sortOrder)
 		}
 		// Create a cache with a quantity of items in category
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, len(items), categoryName+"Quantity")
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, len(items), categoryName+"Quantity")
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create items in category quantity cash with key: %s, error: %v", categoryName+"Quantity", err)
+			usecase.logger.Sugar().Warnf("error on create items in category quantity cache with key: %s, error: %v", categoryName+"Quantity", err)
 		} else {
-			usecase.logger.Sugar().Infof("Create items in category quantity cash with key: %s success", categoryName+"Quantity")
+			usecase.logger.Sugar().Infof("Create items in category quantity cache with key: %s success", categoryName+"Quantity")
 		}
 	}
 	// Get items list from cache
-	items, err := usecase.itemCash.GetItemsCash(ctxT, categoryName+sortType+sortOrder)
+	items, err := usecase.itemCache.GetItemsCache(ctxT, categoryName+sortType+sortOrder)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on get cache with key: %s, error: %v", categoryName+sortType+sortOrder, err)
 		// If error on get cache, request a list of items from the database
@@ -435,7 +435,7 @@ func (usecase *ItemUsecase) SearchLine(ctx context.Context, param string, limitO
 	sortType, sortOrder := sortOptions["sortType"], sortOptions["sortOrder"]
 
 	// Check whether there is a cache of this search request
-	if ok := usecase.itemCash.CheckCash(ctxT, param+sortType+sortOrder); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, param+sortType+sortOrder); !ok {
 		// If the cache does not exist, request a list of items by
 		// search request from the database
 		itemIncomingChan, err := usecase.itemStore.SearchLine(ctx, param)
@@ -447,24 +447,24 @@ func (usecase *ItemUsecase) SearchLine(ctx context.Context, param string, limitO
 			items = append(items, item)
 		}
 		// Create a cache with a quantity of items in list by search request
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, len(items), param+"Quantity")
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, len(items), param+"Quantity")
 		if err != nil {
-			usecase.logger.Warn("can't create items quantity cash: %v", zap.Error(err))
+			usecase.logger.Warn("can't create items quantity cache: %v", zap.Error(err))
 		} else {
-			usecase.logger.Info("Items quantity cash create success")
+			usecase.logger.Info("Items quantity cache create success")
 		}
 		// Sort the list of items in search request based on the sorting parameters
 		usecase.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in search request
-		err = usecase.itemCash.CreateItemsCash(ctxT, items, param+sortType+sortOrder)
+		err = usecase.itemCache.CreateItemsCache(ctxT, items, param+sortType+sortOrder)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create cash of items in search with key: %s, error: %v", param+sortType+sortOrder, err)
+			usecase.logger.Sugar().Warnf("error on create cache of items in search with key: %s, error: %v", param+sortType+sortOrder, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create cash of items in search with key: %s success", param+sortType+sortOrder)
+			usecase.logger.Sugar().Infof("Create cache of items in search with key: %s success", param+sortType+sortOrder)
 		}
 	}
 	// Get items list from cache
-	items, err := usecase.itemCash.GetItemsCash(ctxT, param+sortType+sortOrder)
+	items, err := usecase.itemCache.GetItemsCache(ctxT, param+sortType+sortOrder)
 	if err != nil {
 		usecase.logger.Sugar().Warnf("error on get cache with key: %s, error: %v", param+sortType+sortOrder, err)
 		// If error on get cache, request a list of items from the database
@@ -507,7 +507,7 @@ func (usecase *ItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
 	sortType, sortOrder := sortOptions["sortType"], sortOptions["sortOrder"]
 	// Check whether there is a cache of items in favourites
-	if ok := usecase.itemCash.CheckCash(ctxT, userId.String()+sortType+sortOrder); !ok {
+	if ok := usecase.itemCache.CheckCache(ctxT, userId.String()+sortType+sortOrder); !ok {
 		// If the cache does not exist, request a list of items in
 		// favourites from the database
 		itemIncomingChan, err := usecase.itemStore.GetFavouriteItems(ctx, userId)
@@ -522,24 +522,24 @@ func (usecase *ItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 		// based on the sorting parameters
 		usecase.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in favourites
-		err = usecase.itemCash.CreateItemsCash(ctxT, items, userId.String()+sortType+sortOrder)
+		err = usecase.itemCache.CreateItemsCache(ctxT, items, userId.String()+sortType+sortOrder)
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create favourite items cash with key: %s, error: %v", userId.String()+sortType+sortOrder, err)
+			usecase.logger.Sugar().Warnf("error on create favourite items cache with key: %s, error: %v", userId.String()+sortType+sortOrder, err)
 		} else {
-			usecase.logger.Sugar().Infof("Create favourite items cash with key: %s success", userId.String()+sortType+sortOrder)
+			usecase.logger.Sugar().Infof("Create favourite items cache with key: %s success", userId.String()+sortType+sortOrder)
 		}
 		// Create a cache with a quantity of items in favourites
-		err = usecase.itemCash.CreateItemsQuantityCash(ctxT, len(items), userId.String()+"Quantity")
+		err = usecase.itemCache.CreateItemsQuantityCache(ctxT, len(items), userId.String()+"Quantity")
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create items in favourites quantity cash with key: %s, error: %v", userId.String()+"Quantity", err)
+			usecase.logger.Sugar().Warnf("error on create items in favourites quantity cache with key: %s, error: %v", userId.String()+"Quantity", err)
 		} else {
-			usecase.logger.Sugar().Infof("Create items in favourites quantity cash with key: %s success", userId.String()+"Quantity")
+			usecase.logger.Sugar().Infof("Create items in favourites quantity cache with key: %s success", userId.String()+"Quantity")
 		}
 	}
 	// Get items list from cache
-	items, err := usecase.itemCash.GetItemsCash(ctxT, userId.String()+sortType+sortOrder)
+	items, err := usecase.itemCache.GetItemsCache(ctxT, userId.String()+sortType+sortOrder)
 	if err != nil {
-		usecase.logger.Sugar().Warnf("error on get items in favourite cash with key: %s, error: %v", userId.String()+sortType+sortOrder, err)
+		usecase.logger.Sugar().Warnf("error on get items in favourite cache with key: %s, error: %v", userId.String()+sortType+sortOrder, err)
 		// If error on get cache, request a list of items in favourite from the database
 		itemIncomingChan, err := usecase.itemStore.GetFavouriteItems(ctx, userId)
 		if err != nil {
@@ -578,7 +578,7 @@ func (usecase *ItemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 	defer cancel()
 
 	// Check whether there is a cache of identificators of favourite items
-	if !usecase.itemCash.CheckCash(ctxT, userId.String()+"Fav") {
+	if !usecase.itemCache.CheckCache(ctxT, userId.String()+"Fav") {
 		// If the cache does not exist, request a quantity of
 		// favourite items
 		quantity, err := usecase.ItemsQuantityInFavourite(ctx, userId)
@@ -599,17 +599,17 @@ func (usecase *ItemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 			return nil, err
 		}
 		// Create cache with favourite items identificators
-		err = usecase.itemCash.CreateFavouriteItemsIdCash(ctxT, *favUids, userId.String()+"Fav")
+		err = usecase.itemCache.CreateFavouriteItemsIdCache(ctxT, *favUids, userId.String()+"Fav")
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create favourite items id cash with key: %s, error: %v", userId.String()+"Fav", err)
+			usecase.logger.Sugar().Warnf("error on create favourite items id cache with key: %s, error: %v", userId.String()+"Fav", err)
 		} else {
-			usecase.logger.Sugar().Infof("Create favourite items id cash with key: %s success", userId.String()+"Fav")
+			usecase.logger.Sugar().Infof("Create favourite items id cache with key: %s success", userId.String()+"Fav")
 		}
 	}
 	// Get favourite items identificators from cache
-	favUids, err := usecase.itemCash.GetFavouriteItemsIdCash(ctxT, userId.String()+"Fav")
+	favUids, err := usecase.itemCache.GetFavouriteItemsIdCache(ctxT, userId.String()+"Fav")
 	if err != nil {
-		usecase.logger.Sugar().Errorf("error on get favourite items id cash: %v", err)
+		usecase.logger.Sugar().Errorf("error on get favourite items id cache: %v", err)
 		// If error on get cache, request a map of favourite items identificators
 		// from the database
 		dbFavUids, err := usecase.itemStore.GetFavouriteItemsId(ctx, userId)
@@ -624,25 +624,25 @@ func (usecase *ItemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 	return favUids, nil
 }
 
-// UpdateCash updating cash when creating or updating item
-func (usecase *ItemUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op string) error {
-	usecase.logger.Sugar().Debugf("Enter in itemUsecase UpdateCash() with args: ctx, id: %v, op: %s", id, op)
+// UpdateCache updating cache when creating or updating item
+func (usecase *ItemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
+	usecase.logger.Sugar().Debugf("Enter in itemUsecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
 	// Check the presence of a cache with all possible keys
-	if !usecase.itemCash.CheckCash(ctx, itemsListKeyNameAsc) &&
-		!usecase.itemCash.CheckCash(ctx, itemsListKeyNameDesc) &&
-		!usecase.itemCash.CheckCash(ctx, itemsListKeyPriceAsc) &&
-		!usecase.itemCash.CheckCash(ctx, itemsListKeyPriceDesc) {
+	if !usecase.itemCache.CheckCache(ctx, itemsListKeyNameAsc) &&
+		!usecase.itemCache.CheckCache(ctx, itemsListKeyNameDesc) &&
+		!usecase.itemCache.CheckCache(ctx, itemsListKeyPriceAsc) &&
+		!usecase.itemCache.CheckCache(ctx, itemsListKeyPriceDesc) {
 		// If the cache with any of the keys does not return the error
-		return fmt.Errorf("cash is not exists")
+		return fmt.Errorf("cache is not exists")
 	}
 	newItem := &models.Item{}
-	cashKeys := []string{itemsListKeyNameAsc, itemsListKeyNameDesc, itemsListKeyPriceAsc, itemsListKeyPriceDesc}
+	cacheKeys := []string{itemsListKeyNameAsc, itemsListKeyNameDesc, itemsListKeyPriceAsc, itemsListKeyPriceDesc}
 	// Sort through all possible keys
-	for _, key := range cashKeys {
+	for _, key := range cacheKeys {
 		// For each key get a cache
-		items, err := usecase.itemCash.GetItemsCash(ctx, key)
+		items, err := usecase.itemCache.GetItemsCache(ctx, key)
 		if err != nil {
-			return fmt.Errorf("error on get cash: %w", err)
+			return fmt.Errorf("error on get cache: %w", err)
 		}
 		// If the renewal of the cache is associated with
 		// removal of item, we use
@@ -669,18 +669,18 @@ func (usecase *ItemUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op str
 		}
 		if op == "create" {
 			items = append(items, *newItem)
-			err := usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), itemsQuantityKey)
+			err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), itemsQuantityKey)
 			if err != nil {
-				return fmt.Errorf("error on create items quantity cash: %w", err)
+				return fmt.Errorf("error on create items quantity cache: %w", err)
 			}
 		}
 		if op == "delete" {
 			for i, item := range items {
 				if item.Id == newItem.Id {
 					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), itemsQuantityKey)
+					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), itemsQuantityKey)
 					if err != nil {
-						return fmt.Errorf("error on create items quantity cash: %w", err)
+						return fmt.Errorf("error on create items quantity cache: %w", err)
 					}
 					break
 				}
@@ -699,23 +699,23 @@ func (usecase *ItemUsecase) UpdateCash(ctx context.Context, id uuid.UUID, op str
 			usecase.SortItems(items, "price", "desc")
 		}
 		// Record the updated cache
-		err = usecase.itemCash.CreateItemsCash(ctx, items, key)
+		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
 		if err != nil {
 			return err
 		}
-		usecase.logger.Sugar().Infof("Cash of items list with key: %s update success", key)
+		usecase.logger.Sugar().Infof("Cache of items list with key: %s update success", key)
 	}
 	// Update the cache of the item list in the category
-	err := usecase.UpdateItemsInCategoryCash(ctx, newItem, op)
+	err := usecase.UpdateItemsInCategoryCache(ctx, newItem, op)
 	if err != nil {
 		usecase.logger.Error(err.Error())
 	}
 	return nil
 }
 
-// UpdateItemsInCategoryCash update cash items from category
-func (usecase *ItemUsecase) UpdateItemsInCategoryCash(ctx context.Context, newItem *models.Item, op string) error {
-	usecase.logger.Debug(fmt.Sprintf("Enter in usecase UpdateItemsInCategoryCash() with args: ctx, newItem: %v, op: %s", newItem, op))
+// UpdateItemsInCategoryCache update cache items from category
+func (usecase *ItemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error {
+	usecase.logger.Debug(fmt.Sprintf("Enter in usecase UpdateItemsInCategoryCache() with args: ctx, newItem: %v, op: %s", newItem, op))
 	categoryItemsKeyNameAsc := newItem.Category.Name + "nameasc"
 	categoryItemsKeyNameDesc := newItem.Category.Name + "namedesc"
 	categoryItemsKeyPriceAsc := newItem.Category.Name + "priceasc"
@@ -724,19 +724,19 @@ func (usecase *ItemUsecase) UpdateItemsInCategoryCash(ctx context.Context, newIt
 
 	keys := []string{categoryItemsKeyNameAsc, categoryItemsKeyNameDesc, categoryItemsKeyPriceAsc, categoryItemsKeyPriceDesc}
 	// Check the presence of a cache with all possible keys
-	if !usecase.itemCash.CheckCash(ctx, categoryItemsKeyNameAsc) &&
-		!usecase.itemCash.CheckCash(ctx, categoryItemsKeyNameDesc) &&
-		!usecase.itemCash.CheckCash(ctx, categoryItemsKeyPriceAsc) &&
-		!usecase.itemCash.CheckCash(ctx, categoryItemsKeyPriceDesc) {
+	if !usecase.itemCache.CheckCache(ctx, categoryItemsKeyNameAsc) &&
+		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyNameDesc) &&
+		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyPriceAsc) &&
+		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyPriceDesc) {
 		// If the cache with any of the keys does not return the error
-		return fmt.Errorf("cash is not exist")
+		return fmt.Errorf("cache is not exist")
 	}
 	// Sort through all possible keys
 	for _, key := range keys {
 		// For each key get a cache
-		items, err := usecase.itemCash.GetItemsCash(ctx, key)
+		items, err := usecase.itemCache.GetItemsCache(ctx, key)
 		if err != nil {
-			return fmt.Errorf("error on get cash: %w", err)
+			return fmt.Errorf("error on get cache: %w", err)
 		}
 		// Сhange the list of items in accordance with the operation
 		if op == "update" {
@@ -749,18 +749,18 @@ func (usecase *ItemUsecase) UpdateItemsInCategoryCash(ctx context.Context, newIt
 		}
 		if op == "create" {
 			items = append(items, *newItem)
-			err := usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), categoryItemsQuantityKey)
+			err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), categoryItemsQuantityKey)
 			if err != nil {
-				return fmt.Errorf("error on create items quantity cash: %w", err)
+				return fmt.Errorf("error on create items quantity cache: %w", err)
 			}
 		}
 		if op == "delete" {
 			for i, item := range items {
 				if item.Id == newItem.Id {
 					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), categoryItemsQuantityKey)
+					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), categoryItemsQuantityKey)
 					if err != nil {
-						return fmt.Errorf("error on create items quantity cash: %w", err)
+						return fmt.Errorf("error on create items quantity cache: %w", err)
 					}
 					break
 				}
@@ -778,17 +778,17 @@ func (usecase *ItemUsecase) UpdateItemsInCategoryCash(ctx context.Context, newIt
 			usecase.SortItems(items, "price", "desc")
 		}
 		// Record the updated cache
-		err = usecase.itemCash.CreateItemsCash(ctx, items, key)
+		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
 		if err != nil {
 			return err
 		}
 	}
-	usecase.logger.Info("Update category list cash success")
+	usecase.logger.Info("Update category list cache success")
 	return nil
 }
 
-func (usecase *ItemUsecase) UpdateFavouriteItemsCash(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string) {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavouriteItemsCash() with args: ctx, userId: %v, itemId: %v, op: %s", userId, itemId, op)
+func (usecase *ItemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string) {
+	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavouriteItemsCache() with args: ctx, userId: %v, itemId: %v, op: %s", userId, itemId, op)
 	favouriteItemsKeyNameAsc := userId.String() + "nameasc"
 	favouriteItemsKeyNameDesc := userId.String() + "namedesc"
 	favouriteItemsKeyPriceAsc := userId.String() + "priceasc"
@@ -797,20 +797,20 @@ func (usecase *ItemUsecase) UpdateFavouriteItemsCash(ctx context.Context, userId
 
 	keys := []string{favouriteItemsKeyNameAsc, favouriteItemsKeyNameDesc, favouriteItemsKeyPriceAsc, favouriteItemsKeyPriceDesc}
 	// Check the presence of a cache with all possible keys
-	if !usecase.itemCash.CheckCash(ctx, favouriteItemsKeyNameAsc) &&
-		!usecase.itemCash.CheckCash(ctx, favouriteItemsKeyNameDesc) &&
-		!usecase.itemCash.CheckCash(ctx, favouriteItemsKeyPriceAsc) &&
-		!usecase.itemCash.CheckCash(ctx, favouriteItemsKeyPriceDesc) {
+	if !usecase.itemCache.CheckCache(ctx, favouriteItemsKeyNameAsc) &&
+		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyNameDesc) &&
+		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyPriceAsc) &&
+		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyPriceDesc) {
 		// If the cache with any of the keys does not return the error
-		usecase.logger.Error("cash is not exist")
+		usecase.logger.Error("cache is not exist")
 		return
 	}
 	// Sort through all possible keys
 	for _, key := range keys {
 		// For each key get a cache
-		items, err := usecase.itemCash.GetItemsCash(ctx, key)
+		items, err := usecase.itemCache.GetItemsCache(ctx, key)
 		if err != nil {
-			usecase.logger.Sugar().Errorf("error on get cash: %v", err)
+			usecase.logger.Sugar().Errorf("error on get cache: %v", err)
 			return
 		}
 		// Сhange the list of items in accordance with the operation
@@ -821,9 +821,9 @@ func (usecase *ItemUsecase) UpdateFavouriteItemsCash(ctx context.Context, userId
 				return
 			}
 			items = append(items, *item)
-			err = usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), favouriteItemsQuantityKey)
+			err = usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), favouriteItemsQuantityKey)
 			if err != nil {
-				usecase.logger.Sugar().Errorf("error on create items quantity cash: %w", err)
+				usecase.logger.Sugar().Errorf("error on create items quantity cache: %w", err)
 				return
 			}
 		}
@@ -831,9 +831,9 @@ func (usecase *ItemUsecase) UpdateFavouriteItemsCash(ctx context.Context, userId
 			for i, item := range items {
 				if item.Id == itemId {
 					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCash.CreateItemsQuantityCash(ctx, len(items), favouriteItemsQuantityKey)
+					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), favouriteItemsQuantityKey)
 					if err != nil {
-						usecase.logger.Sugar().Errorf("error on create items quantity cash: %w", err)
+						usecase.logger.Sugar().Errorf("error on create items quantity cache: %w", err)
 						return
 					}
 					break
@@ -852,20 +852,20 @@ func (usecase *ItemUsecase) UpdateFavouriteItemsCash(ctx context.Context, userId
 			usecase.SortItems(items, "price", "desc")
 		}
 		// Record the updated cache
-		err = usecase.itemCash.CreateItemsCash(ctx, items, key)
+		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
 		if err != nil {
-			usecase.logger.Sugar().Errorf("error on create favourite items cash: %v", err)
+			usecase.logger.Sugar().Errorf("error on create favourite items cache: %v", err)
 			return
 		}
 	}
-	usecase.logger.Info("Update favourite items list cash success")
+	usecase.logger.Info("Update favourite items list cache success")
 }
 
-// UpdateFavIdsCash updates cash with favourite items identificators
-func (usecase *ItemUsecase) UpdateFavIdsCash(ctx context.Context, userId, itemId uuid.UUID, op string) {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavIdsCash() with args userId: %v, itemId: %v", userId, itemId)
+// UpdateFavIdsCache updates cache with favourite items identificators
+func (usecase *ItemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
+	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavIdsCache() with args userId: %v, itemId: %v", userId, itemId)
 	// Check the presence of a cache with key
-	if !usecase.itemCash.CheckCash(ctx, userId.String()+"Fav") {
+	if !usecase.itemCache.CheckCache(ctx, userId.String()+"Fav") {
 		// If cache doesn't exists create it
 		favMap := make(map[uuid.UUID]uuid.UUID)
 		// Add itemId in map of favourite
@@ -873,18 +873,18 @@ func (usecase *ItemUsecase) UpdateFavIdsCash(ctx context.Context, userId, itemId
 		favMap[itemId] = userId
 
 		// Record the cache with favourite items identificators
-		err := usecase.itemCash.CreateFavouriteItemsIdCash(ctx, favMap, userId.String()+"Fav")
+		err := usecase.itemCache.CreateFavouriteItemsIdCache(ctx, favMap, userId.String()+"Fav")
 		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create favourite items id cash: %v", err)
+			usecase.logger.Sugar().Warnf("error on create favourite items id cache: %v", err)
 			return
 		}
-		usecase.logger.Info("create favourite items id cash success")
+		usecase.logger.Info("create favourite items id cache success")
 		return
 	}
 	// If cache exists get it
-	favMapLink, err := usecase.itemCash.GetFavouriteItemsIdCash(ctx, userId.String()+"Fav")
+	favMapLink, err := usecase.itemCache.GetFavouriteItemsIdCache(ctx, userId.String()+"Fav")
 	if err != nil {
-		usecase.logger.Sugar().Warn("error on get favourite items id cash with key: %v, err: %v", userId.String()+"Fav", err)
+		usecase.logger.Sugar().Warn("error on get favourite items id cache with key: %v, err: %v", userId.String()+"Fav", err)
 		return
 	}
 	// Сhange the map of favourite items identificators
@@ -897,12 +897,12 @@ func (usecase *ItemUsecase) UpdateFavIdsCash(ctx context.Context, userId, itemId
 		delete(favMap, itemId)
 	}
 	// Record the updated cache
-	err = usecase.itemCash.CreateFavouriteItemsIdCash(ctx, favMap, userId.String()+"Fav")
+	err = usecase.itemCache.CreateFavouriteItemsIdCache(ctx, favMap, userId.String()+"Fav")
 	if err != nil {
-		usecase.logger.Sugar().Warn("error on create favourite items id cash: %v", err)
+		usecase.logger.Sugar().Warn("error on create favourite items id cache: %v", err)
 		return
 	}
-	usecase.logger.Info("Create favourite items id cash success")
+	usecase.logger.Info("Create favourite items id cache success")
 }
 
 // SortItems sorts list of items by sort parameters
@@ -955,7 +955,7 @@ func (usecase *ItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, item.Id, "update")
+	err = usecase.UpdateCache(ctx, item.Id, "update")
 	if err != nil {
 		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}
@@ -992,7 +992,7 @@ func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.UpdateCash(ctx, item.Id, "update")
+	err = usecase.UpdateCache(ctx, item.Id, "update")
 	if err != nil {
 		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}

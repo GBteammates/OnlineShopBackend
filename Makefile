@@ -122,8 +122,8 @@ groupimports:
 mock_store:
 	mockgen -source=internal/repository/repo_interface.go -destination=internal/repository/mocks/repo_mock.go -package=mocks
 
-mock_cash:
-	mockgen -source=internal/repository/cash/cash_interface.go -destination=internal/repository/mocks/cash_mock.go -package=mocks Cash
+mock_cache:
+	mockgen -source=internal/repository/cache/cache_interface.go -destination=internal/repository/mocks/cache_mock.go -package=mocks Cache
 
 mock_usecase:
 	mockgen -source=internal/usecase/usecase_interface.go -destination=internal/usecase/mocks/usecase_mock.go -package=mocks
