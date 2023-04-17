@@ -1,4 +1,4 @@
-package delivery
+package helper
 
 import (
 	"github.com/gin-gonic/gin"
@@ -12,7 +12,7 @@ type ErrorResponse struct {
 	Info   interface{} `json:"info,omitempty"`
 }
 
-func (delivery *Delivery) SetError(c *gin.Context, statusCode int, errs ...error) {
+func SetError(c *gin.Context, statusCode int, errs ...error) {
 	defer func() {
 		if err := recover(); err != nil {
 			c.JSON(statusCode, gin.H{})

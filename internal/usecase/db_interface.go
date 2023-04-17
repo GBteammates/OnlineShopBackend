@@ -43,6 +43,8 @@ type UserStore interface {
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
 	GetRightsList(ctx context.Context) (chan models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
+	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 }
 
 type CartStore interface {
@@ -61,4 +63,6 @@ type OrderStore interface {
 	ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error
 	GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error)
 	GetOrdersForUser(ctx context.Context, user *models.User) (chan models.Order, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
+	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 }

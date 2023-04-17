@@ -3,6 +3,7 @@ package delivery
 import (
 	"OnlineShopBackend/internal/delivery/category"
 	"OnlineShopBackend/internal/delivery/file"
+	"OnlineShopBackend/internal/delivery/helper"
 	"OnlineShopBackend/internal/models"
 	"errors"
 	"fmt"
@@ -29,26 +30,26 @@ import (
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/categories/create [post]
-func (delivery *Delivery) CreateCategory(c *gin.Context) {
+func (delivery *ItemDelivery) CreateCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery CreateCategory()")
 	ctx := c.Request.Context()
 	var deliveryCategory category.ShortCategory
 	if err := c.ShouldBindJSON(&deliveryCategory); err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	if deliveryCategory.Name == "NoCategory" {
 		err := fmt.Errorf("can't create category with this name, name reserved by system")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
-	delivery.logger.Sugar().Debugf("Binded struct: %v", deliveryCategory)
+	delivery.logger.Debugf("Binded struct: %v", deliveryCategory)
 	if deliveryCategory.Name == "" && deliveryCategory.Description == "" {
 		err := fmt.Errorf("empty category in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	modelsCategory := models.Category{
@@ -58,7 +59,7 @@ func (delivery *Delivery) CreateCategory(c *gin.Context) {
 	id, err := delivery.categoryUsecase.CreateCategory(ctx, &modelsCategory)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 	}
 	c.JSON(http.StatusCreated, category.CategoryId{Value: id.String()})
 }
@@ -78,32 +79,32 @@ func (delivery *Delivery) CreateCategory(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/categories/update [put]
-func (delivery *Delivery) UpdateCategory(c *gin.Context) {
+func (delivery *ItemDelivery) UpdateCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UpdateCategory()")
 	id := c.Param("categoryID")
 	delivery.logger.Debug(fmt.Sprintf("Category id from request is %v", id))
 	if id == "" {
 		err := fmt.Errorf("empty id in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	var deliveryCategory category.ShortCategory
 	if err := c.ShouldBindJSON(&deliveryCategory); err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	if deliveryCategory.Name == "NoCategory" {
 		err := fmt.Errorf("this category is protected by changes")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	modelsCategory := models.Category{
@@ -116,12 +117,12 @@ func (delivery *Delivery) UpdateCategory(c *gin.Context) {
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", id)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -144,20 +145,20 @@ func (delivery *Delivery) UpdateCategory(c *gin.Context) {
 //	@Failure		500	{object}	ErrorResponse
 //	@Failure		507	{object}	ErrorResponse
 //	@Router			/categories/image/upload/:categoryID [post]
-func (delivery *Delivery) UploadCategoryImage(c *gin.Context) {
+func (delivery *ItemDelivery) UploadCategoryImage(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UploadCategoryImage()")
 	id := c.Param("categoryID")
 	if id == "" {
 		err := fmt.Errorf("empty id in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	var name string
@@ -170,14 +171,14 @@ func (delivery *Delivery) UploadCategoryImage(c *gin.Context) {
 	} else {
 		err := fmt.Errorf("unsupported media type: %s", contentType)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusUnsupportedMediaType, err)
+		helper.SetError(c, http.StatusUnsupportedMediaType, err)
 		return
 	}
 
 	file, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusUnsupportedMediaType, err)
+		helper.SetError(c, http.StatusUnsupportedMediaType, err)
 		return
 	}
 
@@ -190,12 +191,12 @@ func (delivery *Delivery) UploadCategoryImage(c *gin.Context) {
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{})
@@ -216,19 +217,19 @@ func (delivery *Delivery) UploadCategoryImage(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/categories/image/delete [delete]
-func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
+func (delivery *ItemDelivery) DeleteCategoryImage(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery DeleteCategoryImage()")
 	var imageOptions ImageOptions
 	err := c.Bind(&imageOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	if imageOptions.Id == "" || imageOptions.Name == "" {
 		err = fmt.Errorf("empty id or image name")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("image options is %v", imageOptions))
@@ -236,7 +237,7 @@ func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
 	uid, err := uuid.Parse(imageOptions.Id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -246,12 +247,12 @@ func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -271,19 +272,19 @@ func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/categories/{categoryID} [get]
-func (delivery *Delivery) GetCategory(c *gin.Context) {
+func (delivery *ItemDelivery) GetCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetCategory()")
 	id := c.Param("categoryID")
 	if id == "" {
 		err := fmt.Errorf("empty id from request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("Category id from request is %v", id))
@@ -292,12 +293,12 @@ func (delivery *Delivery) GetCategory(c *gin.Context) {
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, category.Category{
@@ -321,12 +322,12 @@ func (delivery *Delivery) GetCategory(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/categories/list [get]
-func (delivery *Delivery) GetCategoryList(c *gin.Context) {
+func (delivery *ItemDelivery) GetCategoryList(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetCategoryList()")
 	list, err := delivery.categoryUsecase.GetCategoryList(c.Request.Context())
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	ctx := c.Request.Context()
@@ -371,19 +372,19 @@ func (delivery *Delivery) GetCategoryList(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/categories/delete/{categoryID} [delete]
-func (delivery *Delivery) DeleteCategory(c *gin.Context) {
+func (delivery *ItemDelivery) DeleteCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery DeleteCategory()")
 	id := c.Param("categoryID")
 	if id == "" {
 		err := fmt.Errorf("empty category id in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
@@ -392,12 +393,12 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		err = fmt.Errorf("category with id: %s not found", uid)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("deletedCategory: %v", deletedCategory))
@@ -406,7 +407,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 	if deletedCategory.Name == "NoCategory" {
 		err = fmt.Errorf("category NoCategory is a system category and it protected by deleting")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -414,7 +415,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 	quantity, err := delivery.itemUsecase.ItemsQuantityInCategory(ctx, deletedCategory.Name)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	var items []models.Item
@@ -425,7 +426,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 		items, err = delivery.itemUsecase.GetItemsByCategory(ctx, deletedCategory.Name, limitOptions, sortOptions)
 		if err != nil {
 			delivery.logger.Error(err.Error())
-			delivery.SetError(c, http.StatusInternalServerError, err)
+			helper.SetError(c, http.StatusInternalServerError, err)
 			return
 		}
 	}
@@ -434,7 +435,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 	err = delivery.categoryUsecase.DeleteCategory(ctx, uid)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -454,7 +455,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 
 	// If there were no items in the category, we terminate the function
 	if quantity == 0 {
-		delivery.logger.Sugar().Infof("Category with id: %s deleted success", id)
+		delivery.logger.Infof("Category with id: %s deleted success", id)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
@@ -471,7 +472,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 		noCategoryId, err := delivery.categoryUsecase.CreateCategory(ctx, &noCategory)
 		if err != nil {
 			delivery.logger.Error(err.Error())
-			delivery.SetError(c, http.StatusInternalServerError, err)
+			helper.SetError(c, http.StatusInternalServerError, err)
 			return
 		}
 		noCategory.Id = noCategoryId
@@ -490,13 +491,13 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 				delivery.logger.Error(fmt.Sprintf("error on update cache of no category: %v", err))
 			}
 		}
-		delivery.logger.Sugar().Infof("Category with id: %s deleted success", id)
+		delivery.logger.Infof("Category with id: %s deleted success", id)
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(fmt.Sprintf("error on get category by name: %v", err))
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	// We perform the same operations with items if the NoCategory already exists in the database
@@ -511,7 +512,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 			delivery.logger.Error(fmt.Sprintf("error on update cache of no category: %v", err))
 		}
 	}
-	delivery.logger.Sugar().Infof("Category with id: %s deleted success", id)
+	delivery.logger.Infof("Category with id: %s deleted success", id)
 	c.JSON(http.StatusOK, gin.H{})
 }
 
@@ -528,14 +529,14 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/categories/images/list [get]
-func (delivery *Delivery) GetCategoriesImagesList(c *gin.Context) {
+func (delivery *ItemDelivery) GetCategoriesImagesList(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetCategoriesImagesList()")
 
 	ctx := c.Request.Context()
 	fileInfos, err := delivery.categoryUsecase.GetCategoriesImagesList(ctx)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	var files file.FileListResponse

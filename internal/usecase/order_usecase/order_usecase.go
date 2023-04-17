@@ -127,5 +127,24 @@ func (o *order) GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, erro
 		}
 		return &res, nil
 	}
+}
 
+// CreateCart create new cart
+func (o *order) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+	o.logger.Debugf("Enter in usecase cart Create() with args: ctx, userId: %v", userId)
+	cartId, err := o.orderStore.CreateCart(ctx, userId)
+	if err != nil {
+		return cartId, err
+	}
+	return cartId, nil
+}
+
+// DeleteCart delete cart from db
+func (o *order) DeleteCart(ctx context.Context, cartId uuid.UUID) error {
+	o.logger.Debugf("Enter in usecase DeleteCart() with args: ctx, cartId: %v", cartId)
+	err := o.orderStore.DeleteCart(ctx, cartId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

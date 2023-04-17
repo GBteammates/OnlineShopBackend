@@ -3,10 +3,12 @@ package delivery
 import (
 	"OnlineShopBackend/internal/delivery/category"
 	"OnlineShopBackend/internal/delivery/file"
+	"OnlineShopBackend/internal/delivery/helper"
 	"OnlineShopBackend/internal/delivery/item"
 	"OnlineShopBackend/internal/delivery/user/jwtauth"
 	"OnlineShopBackend/internal/metrics"
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -20,6 +22,20 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
+
+type ItemDelivery struct {
+	itemUsecase     usecase.IItemUsecase
+	categoryUsecase usecase.ICategoryUsecase
+	logger          *zap.SugaredLogger
+}
+
+func NewItemDelivery(itemUsecase usecase.IItemUsecase, categoryUsecase usecase.ICategoryUsecase, logger *zap.SugaredLogger) *ItemDelivery {
+	return &ItemDelivery{
+		itemUsecase:     itemUsecase,
+		categoryUsecase: categoryUsecase,
+		logger:          logger,
+	}
+}
 
 // Options is the structure for parsing offset and sort parameters
 type Options struct {
@@ -56,18 +72,18 @@ type ImageOptions struct {
 //	@Failure		404		{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/items/create/ [post]
-func (delivery *Delivery) CreateItem(c *gin.Context) {
+func (delivery *ItemDelivery) CreateItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery CreateItem()")
 	ctx := context.Background()
 	var deliveryItem item.ShortItem
 	if err := c.ShouldBindJSON(&deliveryItem); err != nil {
 		delivery.logger.Error(fmt.Sprintf("error on bind json from request: %v", err))
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	if deliveryItem.Title == "" || deliveryItem.Description == "" || deliveryItem.Price == 0 {
 		delivery.logger.Error(fmt.Errorf("empty item fields in request").Error())
-		delivery.SetError(c, http.StatusBadRequest, fmt.Errorf("empty item fields in request"))
+		helper.SetError(c, http.StatusBadRequest, fmt.Errorf("empty item fields in request"))
 		return
 	}
 
@@ -77,12 +93,12 @@ func (delivery *Delivery) CreateItem(c *gin.Context) {
 		noCategory, err := delivery.categoryUsecase.GetCategoryByName(ctx, "NoCategory")
 		if err != nil && !errors.Is(err, models.ErrorNotFound{}) {
 			delivery.logger.Error(err.Error())
-			delivery.SetError(c, http.StatusInternalServerError, err)
+			helper.SetError(c, http.StatusInternalServerError, err)
 			return
 		}
 		//If NoСategory does not yet exist in the database, we create this category
 		if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-			delivery.logger.Sugar().Errorf("NoCategory is not exists: %v", err)
+			delivery.logger.Errorf("NoCategory is not exists: %v", err)
 			noCategory := models.Category{
 				Name:        "NoCategory",
 				Description: "Category for items without categories",
@@ -90,7 +106,7 @@ func (delivery *Delivery) CreateItem(c *gin.Context) {
 			noCategoryId, err := delivery.categoryUsecase.CreateCategory(ctx, &noCategory)
 			if err != nil {
 				delivery.logger.Error(fmt.Sprintf("error on create no category: %v", err))
-				delivery.SetError(c, http.StatusInternalServerError, err)
+				helper.SetError(c, http.StatusInternalServerError, err)
 				return
 			}
 			// Record the Id of the created category in the new item
@@ -104,7 +120,7 @@ func (delivery *Delivery) CreateItem(c *gin.Context) {
 	categoryId, err := uuid.Parse(deliveryItem.Category)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	modelsItem := models.Item{
@@ -120,7 +136,7 @@ func (delivery *Delivery) CreateItem(c *gin.Context) {
 
 	id, err := delivery.itemUsecase.CreateItem(ctx, &modelsItem)
 	if err != nil {
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusCreated, item.ItemId{Value: id.String()})
@@ -142,13 +158,13 @@ func (delivery *Delivery) CreateItem(c *gin.Context) {
 //	@Failure		404		{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/items/{itemID} [get]
-func (delivery *Delivery) GetItem(c *gin.Context) {
+func (delivery *ItemDelivery) GetItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetItem()")
 	id := c.Param("itemID")
 	if id == "" {
 		err := fmt.Errorf("empty item in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(id)
@@ -156,20 +172,20 @@ func (delivery *Delivery) GetItem(c *gin.Context) {
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	modelsItem, err := delivery.itemUsecase.GetItem(ctx, uid)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -206,25 +222,25 @@ func (delivery *Delivery) GetItem(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/update [put]
-func (delivery *Delivery) UpdateItem(c *gin.Context) {
+func (delivery *ItemDelivery) UpdateItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UpdateItem()")
 	ctx := c.Request.Context()
 	var deliveryItem item.InItem
 	if err := c.ShouldBindJSON(&deliveryItem); err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(deliveryItem.Id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	categoryUid, err := uuid.Parse(deliveryItem.Category)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	// If the item list is empty, add an empty line to it so as not to cause a mistake on the frontend
@@ -242,14 +258,14 @@ func (delivery *Delivery) UpdateItem(c *gin.Context) {
 	// Get the condition of item before the update
 	itemBeforUpdate, err := delivery.itemUsecase.GetItem(ctx, uid)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -269,14 +285,14 @@ func (delivery *Delivery) UpdateItem(c *gin.Context) {
 		// If the updated item has changed the category, request this category, at the same time check its existence
 		updCategory, err := delivery.categoryUsecase.GetCategory(ctx, categoryUid)
 		if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-			delivery.logger.Sugar().Errorf("category with id: %v not found", categoryUid)
+			delivery.logger.Errorf("category with id: %v not found", categoryUid)
 			err = fmt.Errorf("category with id: %v not found", categoryUid)
-			delivery.SetError(c, http.StatusNotFound, err)
+			helper.SetError(c, http.StatusNotFound, err)
 			return
 		}
 		if err != nil {
 			delivery.logger.Error(err.Error())
-			delivery.SetError(c, http.StatusInternalServerError, err)
+			helper.SetError(c, http.StatusInternalServerError, err)
 			return
 		}
 		updatingItem.Category = *updCategory
@@ -284,14 +300,14 @@ func (delivery *Delivery) UpdateItem(c *gin.Context) {
 
 	err = delivery.itemUsecase.UpdateItem(ctx, updatingItem)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", updatingItem.Id)
+		delivery.logger.Errorf("item with id: %v not found", updatingItem.Id)
 		err = fmt.Errorf("item with id: %v not found", updatingItem.Id)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	// Update the cache of the item list in the category
@@ -329,14 +345,14 @@ func (delivery *Delivery) UpdateItem(c *gin.Context) {
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/items/list [get]
-func (delivery *Delivery) ItemsList(c *gin.Context) {
+func (delivery *ItemDelivery) ItemsList(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery ItemsList()")
 	ctx := c.Request.Context()
 	var options Options
 	err := c.Bind(&options)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("options is %v", options))
@@ -358,7 +374,7 @@ func (delivery *Delivery) ItemsList(c *gin.Context) {
 		} else {
 			// Otherwise, set the value of items equal to 10
 			options.Limit = 10
-			delivery.logger.Sugar().Debugf("options limit is set in default value: %d", options.Limit)
+			delivery.logger.Debugf("options limit is set in default value: %d", options.Limit)
 		}
 	}
 
@@ -373,14 +389,14 @@ func (delivery *Delivery) ItemsList(c *gin.Context) {
 	list, err := delivery.itemUsecase.ItemsList(ctx, limitOptions, sortOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	quantity, err := delivery.itemUsecase.ItemsQuantity(ctx)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -421,13 +437,13 @@ func (delivery *Delivery) ItemsList(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/quantity [get]
-func (delivery *Delivery) ItemsQuantity(c *gin.Context) {
+func (delivery *ItemDelivery) ItemsQuantity(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery ItemsListQuantity()")
 	ctx := c.Request.Context()
 	quantity, err := delivery.itemUsecase.ItemsQuantity(ctx)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	itemsQuantity := item.ItemsQuantity{Quantity: quantity}
@@ -447,20 +463,20 @@ func (delivery *Delivery) ItemsQuantity(c *gin.Context) {
 //	@Failure		404				{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500				{object}	ErrorResponse
 //	@Router			/items/quantityCat/{categoryName} [get]
-func (delivery *Delivery) ItemsQuantityInCategory(c *gin.Context) {
+func (delivery *ItemDelivery) ItemsQuantityInCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery ItemsQuantityInCategory()")
 	categoryName := c.Param("categoryName")
 	if categoryName == "" {
 		err := fmt.Errorf("empty  categoryName is not correct")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	quantity, err := delivery.itemUsecase.ItemsQuantityInCategory(ctx, categoryName)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	itemsQuantity := item.ItemsQuantity{Quantity: quantity}
@@ -480,19 +496,19 @@ func (delivery *Delivery) ItemsQuantityInCategory(c *gin.Context) {
 //	@Failure		404		{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500		{object}	ErrorResponse
 //	@Router			/items/quantityFav/{userID} [get]
-func (delivery *Delivery) ItemsQuantityInFavourite(c *gin.Context) {
+func (delivery *ItemDelivery) ItemsQuantityInFavourite(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery ItemsQuantityInFavourite()")
 	userId, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	quantity, err := delivery.itemUsecase.ItemsQuantityInFavourite(ctx, userId)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	itemsQuantity := item.ItemsQuantity{Quantity: quantity}
@@ -512,20 +528,20 @@ func (delivery *Delivery) ItemsQuantityInFavourite(c *gin.Context) {
 //	@Failure		404				{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500				{object}	ErrorResponse
 //	@Router			/items/quantitySearch/{searchRequest} [get]
-func (delivery *Delivery) ItemsQuantityInSearch(c *gin.Context) {
+func (delivery *ItemDelivery) ItemsQuantityInSearch(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery ItemsQuantityInSearch()")
 	searchRequest := c.Param("searchRequest")
 	if searchRequest == "" {
 		err := fmt.Errorf("empty  searchRequest is not correct")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	quantity, err := delivery.itemUsecase.ItemsQuantityInSearch(ctx, searchRequest)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	itemsQuantity := item.ItemsQuantity{Quantity: quantity}
@@ -550,33 +566,33 @@ func (delivery *Delivery) ItemsQuantityInSearch(c *gin.Context) {
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/items/search [get]
-func (delivery *Delivery) SearchLine(c *gin.Context) {
+func (delivery *ItemDelivery) SearchLine(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery SearchLine()")
 	var options SearchOptions
 	err := c.Bind(&options)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("options is %v", options))
 	if options.Param == "" {
 		err = fmt.Errorf("empty search request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	// If the limit is not set to set the value of 10
 	if options.Limit == 0 {
 		options.Limit = 10
-		delivery.logger.Sugar().Debugf("options limit is set in default value: %d", options.Limit)
+		delivery.logger.Debugf("options limit is set in default value: %d", options.Limit)
 	}
 
 	// If sorting parameters are not set, sorting by name in alphabetical order is set
 	if options.SortType == "" {
 		options.SortType = "name"
 		options.SortOrder = "asc"
-		delivery.logger.Sugar().Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
+		delivery.logger.Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
 	}
 
 	ctx := c.Request.Context()
@@ -586,14 +602,14 @@ func (delivery *Delivery) SearchLine(c *gin.Context) {
 	list, err := delivery.itemUsecase.SearchLine(ctx, options.Param, limitOptions, sortOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	quantity, err := delivery.itemUsecase.ItemsQuantityInSearch(ctx, options.Param)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -640,33 +656,33 @@ func (delivery *Delivery) SearchLine(c *gin.Context) {
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/items [get]
-func (delivery *Delivery) GetItemsByCategory(c *gin.Context) {
+func (delivery *ItemDelivery) GetItemsByCategory(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetItemsByCategory()")
 	var options SearchOptions
 	err := c.Bind(&options)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("options is %v", options))
 	if options.Param == "" {
 		err = fmt.Errorf("empty search request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	// If the limit is not set to set the value of 10
 	if options.Limit == 0 {
 		options.Limit = 10
-		delivery.logger.Sugar().Debugf("options limit is set in default value: %d", options.Limit)
+		delivery.logger.Debugf("options limit is set in default value: %d", options.Limit)
 	}
 
 	// If sorting parameters are not set, sorting by name in alphabetical order is set
 	if options.SortType == "" {
 		options.SortType = "name"
 		options.SortOrder = "asc"
-		delivery.logger.Sugar().Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
+		delivery.logger.Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
 	}
 
 	ctx := c.Request.Context()
@@ -675,14 +691,14 @@ func (delivery *Delivery) GetItemsByCategory(c *gin.Context) {
 	list, err := delivery.itemUsecase.GetItemsByCategory(ctx, options.Param, limitOptions, sortOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	quantity, err := delivery.itemUsecase.ItemsQuantityInCategory(ctx, options.Param)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	items := make([]item.OutItem, len(list))
@@ -727,20 +743,20 @@ func (delivery *Delivery) GetItemsByCategory(c *gin.Context) {
 //	@Failure		500	{object}	ErrorResponse
 //	@Failure		507	{object}	ErrorResponse
 //	@Router			/items/image/upload/:itemID [post]
-func (delivery *Delivery) UploadItemImage(c *gin.Context) {
+func (delivery *ItemDelivery) UploadItemImage(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UploadItemImage()")
 	ctx := c.Request.Context()
 	id := c.Param("itemID")
 	if id == "" {
 		err := fmt.Errorf("empty search request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	var name string
@@ -755,14 +771,14 @@ func (delivery *Delivery) UploadItemImage(c *gin.Context) {
 	} else {
 		err := fmt.Errorf("unsupported media type: %s", contentType)
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusUnsupportedMediaType, err)
+		helper.SetError(c, http.StatusUnsupportedMediaType, err)
 		return
 	}
 
 	file, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusUnsupportedMediaType, err)
+		helper.SetError(c, http.StatusUnsupportedMediaType, err)
 		return
 	}
 
@@ -771,13 +787,13 @@ func (delivery *Delivery) UploadItemImage(c *gin.Context) {
 
 	err = delivery.itemUsecase.UploadItemImage(ctx, uid, name, file)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{})
@@ -798,13 +814,13 @@ func (delivery *Delivery) UploadItemImage(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/image/delete [delete]
-func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
+func (delivery *ItemDelivery) DeleteItemImage(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery DeleteItemImage()")
 	var imageOptions ImageOptions
 	err := c.Bind(&imageOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -813,27 +829,27 @@ func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
 	if imageOptions.Id == "" || imageOptions.Name == "" {
 		err := fmt.Errorf("empty image options in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(imageOptions.Id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 	}
 
 	ctx := c.Request.Context()
 
 	err = delivery.itemUsecase.DeleteItemImage(ctx, uid, imageOptions.Name)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -854,19 +870,19 @@ func (delivery *Delivery) DeleteItemImage(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/delete/{itemID} [delete]
-func (delivery *Delivery) DeleteItem(c *gin.Context) {
+func (delivery *ItemDelivery) DeleteItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery DeleteItem()")
 	id := c.Param("itemID")
 	if id == "" {
 		err := fmt.Errorf("empty item id in request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	uid, err := uuid.Parse(id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
@@ -874,35 +890,35 @@ func (delivery *Delivery) DeleteItem(c *gin.Context) {
 	// Get the removed item
 	deletedItem, err := delivery.itemUsecase.GetItem(ctx, uid)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("deletedItem: %v", deletedItem))
 
 	err = delivery.itemUsecase.DeleteItem(ctx, uid)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("item with id: %v not found", uid)
+		delivery.logger.Errorf("item with id: %v not found", uid)
 		err = fmt.Errorf("item with id: %v not found", uid)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 
 	// Update the item list cache in the deleting item's category
 	err = delivery.itemUsecase.UpdateItemsInCategoryCache(ctx, deletedItem, "delete")
 	if err != nil {
-		delivery.logger.Sugar().Errorf("error on update cache in category items list: %v", err)
+		delivery.logger.Errorf("error on update cache in category items list: %v", err)
 	}
 
 	// If item has pictures, we remove them from the storage of pictures
@@ -912,7 +928,7 @@ func (delivery *Delivery) DeleteItem(c *gin.Context) {
 			delivery.logger.Error(err.Error())
 		}
 	}
-	delivery.logger.Sugar().Infof("Item with id: %s deleted success", id)
+	delivery.logger.Infof("Item with id: %s deleted success", id)
 	c.JSON(http.StatusOK, gin.H{})
 
 	metrics.ItemsMetrics.ItemsDeleted.Inc()
@@ -932,37 +948,37 @@ func (delivery *Delivery) DeleteItem(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/addFavItem [post]
-func (delivery *Delivery) AddFavouriteItem(c *gin.Context) {
+func (delivery *ItemDelivery) AddFavouriteItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery AddFavouriteItem()")
 	var addFavItem item.AddFavItem
 	if err := c.ShouldBindJSON(&addFavItem); err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	userId, err := uuid.Parse(addFavItem.UserId)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	itemId, err := uuid.Parse(addFavItem.ItemId)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	err = delivery.itemUsecase.AddFavouriteItem(ctx, userId, itemId)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("user with id: %v or item with id: %v not found", userId, itemId)
+		delivery.logger.Errorf("user with id: %v or item with id: %v not found", userId, itemId)
 		err = fmt.Errorf("user with id: %v or item with id: %v not found", userId, itemId)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -983,31 +999,31 @@ func (delivery *Delivery) AddFavouriteItem(c *gin.Context) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/deleteFav/{userID}/{itemID} [delete]
-func (delivery *Delivery) DeleteFavouriteItem(c *gin.Context) {
+func (delivery *ItemDelivery) DeleteFavouriteItem(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery DeleteFavouriteItem()")
 	userId, err := uuid.Parse(c.Param("userID"))
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	itemId, err := uuid.Parse(c.Param("itemID"))
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	ctx := c.Request.Context()
 	err = delivery.itemUsecase.DeleteFavouriteItem(ctx, userId, itemId)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
-		delivery.logger.Sugar().Errorf("user with id: %v or item with id: %v not found", userId, itemId)
+		delivery.logger.Errorf("user with id: %v or item with id: %v not found", userId, itemId)
 		err = fmt.Errorf("user with id: %v or item with id: %v not found", userId, itemId)
-		delivery.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{})
@@ -1031,39 +1047,39 @@ func (delivery *Delivery) DeleteFavouriteItem(c *gin.Context) {
 //	@Failure		404			{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500			{object}	ErrorResponse
 //	@Router			/items/favList [get]
-func (delivery *Delivery) GetFavouriteItems(c *gin.Context) {
+func (delivery *ItemDelivery) GetFavouriteItems(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetFavouriteItems()")
 	var options SearchOptions
 	err := c.Bind(&options)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	delivery.logger.Debug(fmt.Sprintf("options is %v", options))
 	if options.Param == "" {
 		err = fmt.Errorf("empty search request")
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 	// If the limit is not set to set the value of 10
 	if options.Limit == 0 {
 		options.Limit = 10
-		delivery.logger.Sugar().Debugf("options limit is set in default value: %d", options.Limit)
+		delivery.logger.Debugf("options limit is set in default value: %d", options.Limit)
 	}
 
 	// If sorting parameters are not set, sorting by name in alphabetical order is set
 	if options.SortType == "" {
 		options.SortType = "name"
 		options.SortOrder = "asc"
-		delivery.logger.Sugar().Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
+		delivery.logger.Debugf("options sort params is set in default values: sortType: %s, sortOrder: %s", options.SortType, options.SortOrder)
 	}
 
 	userId, err := uuid.Parse(options.Param)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusBadRequest, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -1074,13 +1090,13 @@ func (delivery *Delivery) GetFavouriteItems(c *gin.Context) {
 	list, err := delivery.itemUsecase.GetFavouriteItems(ctx, userId, limitOptions, sortOptions)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	quantity, err := delivery.itemUsecase.ItemsQuantityInFavourite(ctx, userId)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	items := make([]item.OutItem, len(list))
@@ -1108,7 +1124,7 @@ func (delivery *Delivery) GetFavouriteItems(c *gin.Context) {
 }
 
 // IsFavourite checks whether item is the favourite
-func (delivery *Delivery) IsFavourite(c *gin.Context, itemId uuid.UUID) bool {
+func (delivery *ItemDelivery) IsFavourite(c *gin.Context, itemId uuid.UUID) bool {
 	delivery.logger.Debug("Enter in delivery IsFavourite()")
 	if !delivery.IsAuthorize(c) {
 		return false
@@ -1135,7 +1151,7 @@ func (delivery *Delivery) IsFavourite(c *gin.Context, itemId uuid.UUID) bool {
 }
 
 // IsAuthorize checks authorized whether the user who makes a request is
-func (delivery *Delivery) IsAuthorize(c *gin.Context) bool {
+func (delivery *ItemDelivery) IsAuthorize(c *gin.Context) bool {
 	delivery.logger.Debug("Enter in delivery item IsAuthorize()")
 
 	tokenString := c.GetHeader(authorizationHeader)
@@ -1158,7 +1174,7 @@ func (delivery *Delivery) IsAuthorize(c *gin.Context) bool {
 }
 
 // GetUserId returns id of authorized user or error
-func (delivery *Delivery) GetUserId(c *gin.Context) (uuid.UUID, error) {
+func (delivery *ItemDelivery) GetUserId(c *gin.Context) (uuid.UUID, error) {
 	delivery.logger.Debug("Enter in delivery GetUserId()")
 
 	tokenString := c.GetHeader(authorizationHeader)
@@ -1201,14 +1217,14 @@ func (delivery *Delivery) GetUserId(c *gin.Context) (uuid.UUID, error) {
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Failure		500	{object}	ErrorResponse
 //	@Router			/items/images/list [get]
-func (delivery *Delivery) GetItemsImagesList(c *gin.Context) {
+func (delivery *ItemDelivery) GetItemsImagesList(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery GetItemsImagesList()")
 
 	ctx := c.Request.Context()
 	fileInfos, err := delivery.itemUsecase.GetItemsImagesList(ctx)
 	if err != nil {
 		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
+		helper.SetError(c, http.StatusInternalServerError, err)
 		return
 	}
 	var files file.FileListResponse

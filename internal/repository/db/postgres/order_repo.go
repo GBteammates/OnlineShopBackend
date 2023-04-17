@@ -239,3 +239,65 @@ func (o *order) GetOrdersForUser(ctx context.Context, user *models.User) (chan m
 		return resChan, nil
 	}
 }
+
+// Create Shall we add items at the moment we create cart
+func (o *order) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+	o.logger.Debugf("Enter in repository cart Create() with args: ctx, userId: %v", userId)
+	select {
+	case <-ctx.Done():
+		return uuid.Nil, fmt.Errorf("context closed")
+	default:
+		pool := o.storage.GetPool()
+		var cartId uuid.UUID
+		row := pool.QueryRow(ctx, `INSERT INTO carts (user_id) VALUES ($1) RETURNING id`,
+			userId)
+		err := row.Scan(&cartId)
+		if err != nil {
+			o.logger.Error(err)
+			return uuid.Nil, fmt.Errorf("can't create cart object: %w", err)
+		}
+		o.logger.Info("Create cart success")
+		return cartId, nil
+	}
+}
+
+func (o *order) DeleteCart(ctx context.Context, cartId uuid.UUID) error {
+	o.logger.Debug("Enter in repository cart DeleteCart() with args: ctx, cartId: %v", cartId)
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context closed")
+	default:
+		pool := o.storage.GetPool()
+		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
+		defer func() {
+			if err != nil {
+				o.logger.Errorf("transaction rolled back")
+				if err = tx.Rollback(ctx); err != nil {
+					o.logger.Errorf("can't rollback %s", err)
+				}
+
+			} else {
+				o.logger.Info("transaction commited")
+				if err != tx.Commit(ctx) {
+					o.logger.Errorf("can't commit %s", err)
+				}
+			}
+		}()
+		_, err = tx.Exec(ctx, `DELETE FROM cart_items WHERE cart_id=$1`, cartId)
+		if err != nil {
+			o.logger.Errorf("can't delete cart items from cart: %s", err)
+			return fmt.Errorf("can't delete cart items from cart: %w", err)
+		}
+		_, err = tx.Exec(ctx, `DELETE FROM carts WHERE id=$1`, cartId)
+		if err != nil && strings.Contains(err.Error(), "no rows in result set") {
+			o.logger.Errorf("can't delete cart: %s", err)
+			return models.ErrorNotFound{}
+		}
+		if err != nil {
+			o.logger.Errorf("can't delete cart: %s", err)
+			return fmt.Errorf("can't delete cart: %w", err)
+		}
+		o.logger.Info("Delete cart with id: %v from database success", cartId)
+		return nil
+	}
+}

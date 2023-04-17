@@ -154,3 +154,23 @@ func (usecase *UserUsecase) CreateRights(ctx context.Context, rights *models.Rig
 	}
 	return id, nil
 }
+
+// GetCartByUserId creates request in db and returns cart or error
+func (usecase *UserUsecase) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
+	usecase.logger.Sugar().Debugf("Enter in usecase GetCart() with args: ctx, userId: %v", userId)
+	cart, err := usecase.userStore.GetCartByUserId(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+	return cart, nil
+}
+
+// Create create new cart
+func (usecase *UserUsecase) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+	usecase.logger.Sugar().Debugf("Enter in usecase cart Create() with args: ctx, userId: %v", userId)
+	cartId, err := usecase.userStore.CreateCart(ctx, userId)
+	if err != nil {
+		return cartId, err
+	}
+	return cartId, nil
+}

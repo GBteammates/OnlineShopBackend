@@ -57,6 +57,8 @@ type IOrderUsecase interface {
 	DeleteOrder(ctx context.Context, order *models.Order) error
 	ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error
 	GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
+	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 }
 type ICartUsecase interface {
 	GetCart(ctx context.Context, cartId uuid.UUID) (*models.Cart, error)
@@ -75,4 +77,6 @@ type IUserUsecase interface {
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
 	GetRightsList(ctx context.Context) ([]models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
+	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 }

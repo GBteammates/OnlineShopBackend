@@ -32,7 +32,7 @@ func (c *CartUseCase) GetCart(ctx context.Context, cartId uuid.UUID) (*models.Ca
 	return cart, nil
 }
 
-// GetCart creates request in db and returns cart or error
+// GetCartByUserId creates request in db and returns cart or error
 func (c *CartUseCase) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
 	c.logger.Sugar().Debugf("Enter in usecase GetCart() with args: ctx, userId: %v", userId)
 	cart, err := c.store.GetCartByUserId(ctx, userId)

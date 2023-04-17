@@ -119,6 +119,7 @@ func (c *cart) DeleteCart(ctx context.Context, cartId uuid.UUID) error {
 		return nil
 	}
 }
+
 func (c *cart) DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error {
 	c.logger.Debug("Enter in repository cart DeleteItemFromCart() with args: ctx, cartId: %v, itemId: %v", cartId, itemId)
 	select {
