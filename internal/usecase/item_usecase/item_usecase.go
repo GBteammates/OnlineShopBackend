@@ -996,3 +996,13 @@ func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	}
 	return nil
 }
+
+func(usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) (*[]models.FileInfo, error) {
+	usecase.logger.Debug("Enter in usecase GetItemsImagesList()")
+
+	result, err := usecase.filestorage.GetItemsImagesList()
+	if err != nil {
+		return nil, fmt.Errorf("error on get items images list: %w", err)
+	}
+	return result, nil
+}

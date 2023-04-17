@@ -90,19 +90,34 @@ func (mr *MockFileStoragerMockRecorder) DeleteItemImagesFolderById(id interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItemImagesFolderById", reflect.TypeOf((*MockFileStorager)(nil).DeleteItemImagesFolderById), id)
 }
 
-// GetFileList mocks base method.
-func (m *MockFileStorager) GetFileList() ([]models.FileInfo, error) {
+// GetCategoriesImagesList mocks base method.
+func (m *MockFileStorager) GetCategoriesImagesList() (*[]models.FileInfo, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetFileList")
-	ret0, _ := ret[0].([]models.FileInfo)
+	ret := m.ctrl.Call(m, "GetCategoriesImagesList")
+	ret0, _ := ret[0].(*[]models.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetFileList indicates an expected call of GetFileList.
-func (mr *MockFileStoragerMockRecorder) GetFileList() *gomock.Call {
+// GetCategoriesImagesList indicates an expected call of GetCategoriesImagesList.
+func (mr *MockFileStoragerMockRecorder) GetCategoriesImagesList() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileList", reflect.TypeOf((*MockFileStorager)(nil).GetFileList))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoriesImagesList", reflect.TypeOf((*MockFileStorager)(nil).GetCategoriesImagesList))
+}
+
+// GetItemsImagesList mocks base method.
+func (m *MockFileStorager) GetItemsImagesList() (*[]models.FileInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetItemsImagesList")
+	ret0, _ := ret[0].(*[]models.FileInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetItemsImagesList indicates an expected call of GetItemsImagesList.
+func (mr *MockFileStoragerMockRecorder) GetItemsImagesList() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetItemsImagesList", reflect.TypeOf((*MockFileStorager)(nil).GetItemsImagesList))
 }
 
 // PutCategoryImage mocks base method.

@@ -119,8 +119,8 @@ run_db:
 groupimports:
 	find . -type f -name '*.go' ! -path './.git/*' | xargs -L 1 python3 third_party/groupimports.py
 
-mock_store:
-	mockgen -source=internal/usecase/repo_interface.go -destination=internal/usecase/repo_mocks/repo_mock.go -package=mocks
+mock_db:
+	mockgen -source=internal/usecase/db_interface.go -destination=internal/usecase/repo_mocks/db_mock.go -package=mocks
 
 mock_cache:
 	mockgen -source=internal/usecase/cache_interface.go -destination=internal/usecase/repo_mocks/cache_mock.go -package=mocks Cache

@@ -277,3 +277,13 @@ func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid
 	}
 	return nil
 }
+
+func (usecase *CategoryUsecase) GetCategoriesImagesList(ctx context.Context) (*[]models.FileInfo, error) {
+	usecase.logger.Debug("Enter in usecase GetCategoriesImagesList()")
+
+	result, err := usecase.filestorage.GetCategoriesImagesList()
+	if err != nil {
+		return nil, fmt.Errorf("error on get categories images list: %w", err)
+	}
+	return result, nil
+}

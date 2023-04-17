@@ -110,7 +110,7 @@ func (filestorage *FileStorage) DeleteItemImagesFolderById(id string) error {
 	return nil
 }
 
-func (filestorage *FileStorage) GetItemsImagesList() ([]models.FileInfo, error) {
+func (filestorage *FileStorage) GetItemsImagesList() (*[]models.FileInfo, error) {
 	filestorage.logger.Debug("Enter in filestorage GetItemsImagesList()")
 
 	result := make([]models.FileInfo, 0)
@@ -127,12 +127,13 @@ func (filestorage *FileStorage) GetItemsImagesList() ([]models.FileInfo, error) 
 	})
 	if err != nil {
 		filestorage.logger.Error(fmt.Sprintf("error on get items images: %v", err))
-		return nil, fmt.Errorf("error on get items images list: %w", err)
+		return nil, err
 	}
-	return result, nil
+	filestorage.logger.Info("Get items images list success")
+	return &result, nil
 }
 
-func (filestorage *FileStorage) GetCategoriesImagesList() ([]models.FileInfo, error) {
+func (filestorage *FileStorage) GetCategoriesImagesList() (*[]models.FileInfo, error) {
 	filestorage.logger.Debug("Enter in filestorage GetCategoriesImagesList()")
 
 	result := make([]models.FileInfo, 0)
@@ -149,7 +150,8 @@ func (filestorage *FileStorage) GetCategoriesImagesList() ([]models.FileInfo, er
 	})
 	if err != nil {
 		filestorage.logger.Error(fmt.Sprintf("error on get categories images list: %v", err))
-		return nil, fmt.Errorf("error on get categories images list: %w", err)
+		return nil, err
 	}
-	return result, nil
+	filestorage.logger.Info("Get categories images list success")
+	return &result, nil
 }
