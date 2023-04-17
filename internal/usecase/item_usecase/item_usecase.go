@@ -997,7 +997,7 @@ func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	return nil
 }
 
-func(usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) (*[]models.FileInfo, error) {
+func (usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error) {
 	usecase.logger.Debug("Enter in usecase GetItemsImagesList()")
 
 	result, err := usecase.filestorage.GetItemsImagesList()
@@ -1005,4 +1005,14 @@ func(usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) (*[]models.Fi
 		return nil, fmt.Errorf("error on get items images list: %w", err)
 	}
 	return result, nil
+}
+
+func (usecase *ItemUsecase) DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error {
+	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItemImagesFolderById() with args: ctx, id: %v", id)
+
+	err := usecase.filestorage.DeleteItemImagesFolderById(id.String())
+	if err != nil {
+		return fmt.Errorf("error on delete item images folder: %w", err)
+	}
+	return nil
 }

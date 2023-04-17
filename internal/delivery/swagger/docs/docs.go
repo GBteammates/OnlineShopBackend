@@ -569,6 +569,50 @@ const docTemplate = `{
                 }
             }
         },
+        "/categories/images/list": {
+            "get": {
+                "description": "Method provides to get list of categories images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get list of files",
+                "responses": {
+                    "200": {
+                        "description": "List of categories images",
+                        "schema": {
+                            "$ref": "#/definitions/file.FileListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "404 Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/categories/list": {
             "get": {
                 "description": "Method provides to get list of categories",
@@ -702,50 +746,6 @@ const docTemplate = `{
                         "description": "Category structure",
                         "schema": {
                             "$ref": "#/definitions/category.Category"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/delivery.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden"
-                    },
-                    "404": {
-                        "description": "404 Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/delivery.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/delivery.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/images/list": {
-            "get": {
-                "description": "Method provides to get list of files.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "files"
-                ],
-                "summary": "Get list of files",
-                "responses": {
-                    "200": {
-                        "description": "List of files",
-                        "schema": {
-                            "$ref": "#/definitions/file.FileListResponse"
                         }
                     },
                     "400": {
@@ -1265,6 +1265,50 @@ const docTemplate = `{
                     },
                     "507": {
                         "description": "Insufficient Storage",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/items/images/list": {
+            "get": {
+                "description": "Method provides to get list of items images",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Get list of items images",
+                "responses": {
+                    "200": {
+                        "description": "List of items images",
+                        "schema": {
+                            "$ref": "#/definitions/file.FileListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "404 Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/delivery.ErrorResponse"
                         }
@@ -2031,27 +2075,6 @@ const docTemplate = `{
             }
         },
         "/user/callbackGoogle": {
-            "get": {
-                "description": "Method provides to log in with Google",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "Callback Google provides logic for oauth google login",
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            },
             "put": {
                 "description": "Method provides to Change User Role",
                 "consumes": [
@@ -2320,7 +2343,7 @@ const docTemplate = `{
                 "summary": "User profile update",
                 "parameters": [
                     {
-                        "description": "User data",
+                        "description": "New user data",
                         "name": "user",
                         "in": "body",
                         "required": true,

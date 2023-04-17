@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"OnlineShopBackend/internal/delivery/category"
+	"OnlineShopBackend/internal/delivery/file"
 	"OnlineShopBackend/internal/delivery/item"
 	"OnlineShopBackend/internal/delivery/user/jwtauth"
 	"OnlineShopBackend/internal/metrics"
@@ -906,7 +907,7 @@ func (delivery *Delivery) DeleteItem(c *gin.Context) {
 
 	// If item has pictures, we remove them from the storage of pictures
 	if len(deletedItem.Images) > 0 {
-		err = delivery.filestorage.DeleteItemImagesFolderById(id)
+		err = delivery.itemUsecase.DeleteItemImagesFolderById(ctx, uid)
 		if err != nil {
 			delivery.logger.Error(err.Error())
 		}
@@ -1185,4 +1186,41 @@ func (delivery *Delivery) GetUserId(c *gin.Context) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return claims.UserId, nil
+}
+
+// GetItemsImagesList returns list of items images
+//
+//	@Summary		Get list of items images
+//	@Description	Method provides to get list of items images
+//	@Tags			files
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	file.FileListResponse	"List of items images"
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		403	"Forbidden"
+//	@Failure		404	{object}	ErrorResponse	"404 Not Found"
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/items/images/list [get]
+func (delivery *Delivery) GetItemsImagesList(c *gin.Context) {
+	delivery.logger.Debug("Enter in delivery GetItemsImagesList()")
+
+	ctx := c.Request.Context()
+	fileInfos, err := delivery.itemUsecase.GetItemsImagesList(ctx)
+	if err != nil {
+		delivery.logger.Error(err.Error())
+		delivery.SetError(c, http.StatusInternalServerError, err)
+		return
+	}
+	var files file.FileListResponse
+	files.Files = make([]file.FilesInfo, len(fileInfos))
+	for i, info := range fileInfos {
+		files.Files[i] = file.FilesInfo{
+			Name:       info.Name,
+			Path:       info.Path,
+			CreateDate: info.CreateDate,
+			ModifyDate: info.ModifyDate,
+		}
+	}
+
+	c.JSON(http.StatusOK, files)
 }

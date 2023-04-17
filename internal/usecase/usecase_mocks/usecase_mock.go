@@ -108,6 +108,20 @@ func (mr *MockIItemUsecaseMockRecorder) DeleteItemImage(ctx, id, name interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItemImage", reflect.TypeOf((*MockIItemUsecase)(nil).DeleteItemImage), ctx, id, name)
 }
 
+// DeleteItemImagesFolderById mocks base method.
+func (m *MockIItemUsecase) DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteItemImagesFolderById", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteItemImagesFolderById indicates an expected call of DeleteItemImagesFolderById.
+func (mr *MockIItemUsecaseMockRecorder) DeleteItemImagesFolderById(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItemImagesFolderById", reflect.TypeOf((*MockIItemUsecase)(nil).DeleteItemImagesFolderById), ctx, id)
+}
+
 // GetFavouriteItems mocks base method.
 func (m *MockIItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	m.ctrl.T.Helper()
@@ -166,6 +180,21 @@ func (m *MockIItemUsecase) GetItemsByCategory(ctx context.Context, categoryName 
 func (mr *MockIItemUsecaseMockRecorder) GetItemsByCategory(ctx, categoryName, limitOptions, sortOptions interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetItemsByCategory", reflect.TypeOf((*MockIItemUsecase)(nil).GetItemsByCategory), ctx, categoryName, limitOptions, sortOptions)
+}
+
+// GetItemsImagesList mocks base method.
+func (m *MockIItemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetItemsImagesList", ctx)
+	ret0, _ := ret[0].([]*models.FileInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetItemsImagesList indicates an expected call of GetItemsImagesList.
+func (mr *MockIItemUsecaseMockRecorder) GetItemsImagesList(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetItemsImagesList", reflect.TypeOf((*MockIItemUsecase)(nil).GetItemsImagesList), ctx)
 }
 
 // ItemsList mocks base method.
@@ -428,6 +457,35 @@ func (m *MockICategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid.
 func (mr *MockICategoryUsecaseMockRecorder) DeleteCategoryImage(ctx, id, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategoryImage", reflect.TypeOf((*MockICategoryUsecase)(nil).DeleteCategoryImage), ctx, id, name)
+}
+
+// DeleteCategoryImageById mocks base method.
+func (m *MockICategoryUsecase) DeleteCategoryImageById(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCategoryImageById", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCategoryImageById indicates an expected call of DeleteCategoryImageById.
+func (mr *MockICategoryUsecaseMockRecorder) DeleteCategoryImageById(ctx, id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategoryImageById", reflect.TypeOf((*MockICategoryUsecase)(nil).DeleteCategoryImageById), ctx, id)
+}
+
+// GetCategoriesImagesList mocks base method.
+func (m *MockICategoryUsecase) GetCategoriesImagesList(ctx context.Context) ([]*models.FileInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategoriesImagesList", ctx)
+	ret0, _ := ret[0].([]*models.FileInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategoriesImagesList indicates an expected call of GetCategoriesImagesList.
+func (mr *MockICategoryUsecaseMockRecorder) GetCategoriesImagesList(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoriesImagesList", reflect.TypeOf((*MockICategoryUsecase)(nil).GetCategoriesImagesList), ctx)
 }
 
 // GetCategory mocks base method.

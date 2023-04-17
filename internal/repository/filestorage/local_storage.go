@@ -110,13 +110,13 @@ func (filestorage *FileStorage) DeleteItemImagesFolderById(id string) error {
 	return nil
 }
 
-func (filestorage *FileStorage) GetItemsImagesList() (*[]models.FileInfo, error) {
+func (filestorage *FileStorage) GetItemsImagesList() ([]*models.FileInfo, error) {
 	filestorage.logger.Debug("Enter in filestorage GetItemsImagesList()")
 
-	result := make([]models.FileInfo, 0)
+	result := make([]*models.FileInfo, 0)
 	err := filepath.Walk(filestorage.path+"/items", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
-			result = append(result, models.FileInfo{
+			result = append(result, &models.FileInfo{
 				Name:       info.Name(),
 				Path:       path,
 				CreateDate: info.ModTime().String(),
@@ -130,16 +130,16 @@ func (filestorage *FileStorage) GetItemsImagesList() (*[]models.FileInfo, error)
 		return nil, err
 	}
 	filestorage.logger.Info("Get items images list success")
-	return &result, nil
+	return result, nil
 }
 
-func (filestorage *FileStorage) GetCategoriesImagesList() (*[]models.FileInfo, error) {
+func (filestorage *FileStorage) GetCategoriesImagesList() ([]*models.FileInfo, error) {
 	filestorage.logger.Debug("Enter in filestorage GetCategoriesImagesList()")
 
-	result := make([]models.FileInfo, 0)
+	result := make([]*models.FileInfo, 0)
 	err := filepath.Walk(filestorage.path+"/categoires", func(path string, info fs.FileInfo, err error) error {
 		if !info.IsDir() {
-			result = append(result, models.FileInfo{
+			result = append(result, &models.FileInfo{
 				Name:       info.Name(),
 				Path:       path,
 				CreateDate: info.ModTime().String(),
@@ -153,5 +153,5 @@ func (filestorage *FileStorage) GetCategoriesImagesList() (*[]models.FileInfo, e
 		return nil, err
 	}
 	filestorage.logger.Info("Get categories images list success")
-	return &result, nil
+	return result, nil
 }

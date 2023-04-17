@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"OnlineShopBackend/internal/delivery/category"
+	"OnlineShopBackend/internal/delivery/file"
 	"OnlineShopBackend/internal/models"
 	"errors"
 	"fmt"
@@ -232,21 +233,14 @@ func (delivery *Delivery) DeleteCategoryImage(c *gin.Context) {
 	}
 	delivery.logger.Debug(fmt.Sprintf("image options is %v", imageOptions))
 
-	err = delivery.filestorage.DeleteCategoryImage(imageOptions.Id, imageOptions.Name)
-	if err != nil {
-		delivery.logger.Error(err.Error())
-		delivery.SetError(c, http.StatusInternalServerError, err)
-		return
-
-	}
-	ctx := c.Request.Context()
-
 	uid, err := uuid.Parse(imageOptions.Id)
 	if err != nil {
 		delivery.logger.Error(err.Error())
 		delivery.SetError(c, http.StatusBadRequest, err)
 		return
 	}
+
+	ctx := c.Request.Context()
 
 	err = delivery.categoryUsecase.DeleteCategoryImage(ctx, uid, imageOptions.Name)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
@@ -452,7 +446,7 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 
 	// If the category has a picture, delete this picture
 	if deletedCategory.Image != "" {
-		err = delivery.filestorage.DeleteCategoryImageById(id)
+		err = delivery.categoryUsecase.DeleteCategoryImageById(ctx, uid)
 		if err != nil {
 			delivery.logger.Error(err.Error())
 		}
@@ -519,4 +513,41 @@ func (delivery *Delivery) DeleteCategory(c *gin.Context) {
 	}
 	delivery.logger.Sugar().Infof("Category with id: %s deleted success", id)
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+// GetCategoriesImagesList returns list of categories images
+//
+//	@Summary		Get list of files
+//	@Description	Method provides to get list of categories images
+//	@Tags			files
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	file.FileListResponse	"List of categories images"
+//	@Failure		400	{object}	ErrorResponse
+//	@Failure		403	"Forbidden"
+//	@Failure		404	{object}	ErrorResponse	"404 Not Found"
+//	@Failure		500	{object}	ErrorResponse
+//	@Router			/categories/images/list [get]
+func (delivery *Delivery) GetCategoriesImagesList(c *gin.Context) {
+	delivery.logger.Debug("Enter in delivery GetCategoriesImagesList()")
+
+	ctx := c.Request.Context()
+	fileInfos, err := delivery.categoryUsecase.GetCategoriesImagesList(ctx)
+	if err != nil {
+		delivery.logger.Error(err.Error())
+		delivery.SetError(c, http.StatusInternalServerError, err)
+		return
+	}
+	var files file.FileListResponse
+	files.Files = make([]file.FilesInfo, len(fileInfos))
+	for i, info := range fileInfos {
+		files.Files[i] = file.FilesInfo{
+			Name:       info.Name,
+			Path:       info.Path,
+			CreateDate: info.CreateDate,
+			ModifyDate: info.ModifyDate,
+		}
+	}
+
+	c.JSON(http.StatusOK, files)
 }

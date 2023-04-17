@@ -31,7 +31,8 @@ type IItemUsecase interface {
 	UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string)
 	UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
 	DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error
-	GetItemsImagesList(ctx context.Context) (*[]models.FileInfo, error)
+	GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error)
+	DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error
 }
 
 type ICategoryUsecase interface {
@@ -45,7 +46,8 @@ type ICategoryUsecase interface {
 	DeleteCategoryCache(ctx context.Context, name string) error
 	UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error
 	DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error
-	GetCategoriesImagesList(ctx context.Context) (*[]models.FileInfo, error)
+	GetCategoriesImagesList(ctx context.Context) ([]*models.FileInfo, error)
+	DeleteCategoryImageById(ctx context.Context, id uuid.UUID) error
 }
 
 type IOrderUsecase interface {

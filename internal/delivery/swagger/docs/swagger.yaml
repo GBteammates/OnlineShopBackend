@@ -836,6 +836,35 @@ paths:
       summary: Upload an image of category
       tags:
       - categories
+  /categories/images/list:
+    get:
+      consumes:
+      - application/json
+      description: Method provides to get list of categories images
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of categories images
+          schema:
+            $ref: '#/definitions/file.FileListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+        "403":
+          description: Forbidden
+        "404":
+          description: 404 Not Found
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+      summary: Get list of files
+      tags:
+      - files
   /categories/list:
     get:
       consumes:
@@ -906,35 +935,6 @@ paths:
       summary: Method provides to update category
       tags:
       - categories
-  /images/list:
-    get:
-      consumes:
-      - application/json
-      description: Method provides to get list of files.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: List of files
-          schema:
-            $ref: '#/definitions/file.FileListResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/delivery.ErrorResponse'
-        "403":
-          description: Forbidden
-        "404":
-          description: 404 Not Found
-          schema:
-            $ref: '#/definitions/delivery.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/delivery.ErrorResponse'
-      summary: Get list of files
-      tags:
-      - files
   /items:
     get:
       consumes:
@@ -1303,6 +1303,35 @@ paths:
       summary: Upload an image of item
       tags:
       - items
+  /items/images/list:
+    get:
+      consumes:
+      - application/json
+      description: Method provides to get list of items images
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of items images
+          schema:
+            $ref: '#/definitions/file.FileListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+        "403":
+          description: Forbidden
+        "404":
+          description: 404 Not Found
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/delivery.ErrorResponse'
+      summary: Get list of items images
+      tags:
+      - files
   /items/list:
     get:
       consumes:
@@ -1771,20 +1800,6 @@ paths:
       tags:
       - order
   /user/callbackGoogle:
-    get:
-      consumes:
-      - application/json
-      description: Method provides to log in with Google
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-        "500":
-          description: Internal Server Error
-      summary: Callback Google provides logic for oauth google login
-      tags:
-      - user
     put:
       consumes:
       - application/json
@@ -1951,7 +1966,7 @@ paths:
       - application/json
       description: Method provides to update profile info
       parameters:
-      - description: User data
+      - description: New user data
         in: body
         name: user
         required: true

@@ -9,6 +9,6 @@ type FileStorager interface {
 	DeleteCategoryImage(id string, filename string) error
 	DeleteCategoryImageById(id string) error
 	DeleteItemImagesFolderById(id string) error
-	GetItemsImagesList() (*[]models.FileInfo, error)
-	GetCategoriesImagesList() (*[]models.FileInfo, error)
+	GetItemsImagesList() ([]*models.FileInfo, error)
+	GetCategoriesImagesList() ([]*models.FileInfo, error)
 }

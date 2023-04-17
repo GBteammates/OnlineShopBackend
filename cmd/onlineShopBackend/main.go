@@ -7,8 +7,8 @@ import (
 	"OnlineShopBackend/internal/delivery/server"
 	"OnlineShopBackend/internal/delivery/user/password"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
 	redisCache "OnlineShopBackend/internal/repository/cache/redis"
+	"OnlineShopBackend/internal/repository/db/postgres"
 	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/usecase"
 	"OnlineShopBackend/internal/usecase/cart_usecase"
@@ -44,19 +44,18 @@ func main() {
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 
-	pgstore, err := repository.NewPgxStorage(ctx, lsug, cfg.DNS)
+	pgstore, err := postgres.NewPgxStorage(ctx, lsug, cfg.DNS)
 	if err != nil {
 		log.Fatalf("can't initalize storage: %v", err)
 	}
-	itemStore := repository.NewItemRepo(pgstore, lsug)
-	categoryStore := repository.NewCategoryRepo(pgstore, lsug)
-	userStore := repository.NewUser(pgstore, lsug)
+	itemStore := postgres.NewItemRepo(pgstore, lsug)
+	categoryStore := postgres.NewCategoryRepo(pgstore, lsug)
+	userStore := postgres.NewUser(pgstore, lsug)
+	cartStore := postgres.NewCartStore(pgstore, lsug)
+	orderStore := postgres.NewOrderRepo(pgstore, lsug)
 
 	setAdmin(userStore, cfg.AdminMail, cfg.AdminPass, l)
 	setCustomerRights(userStore, l)
-
-	cartStore := repository.NewCartStore(pgstore, lsug)
-	orderStore := repository.NewOrderRepo(pgstore, lsug)
 
 	redis, err := redisCache.NewRedisCache(cfg.CashHost, cfg.CashPort, time.Duration(cfg.CashTTL), l)
 	if err != nil {
@@ -65,7 +64,7 @@ func main() {
 	itemsCache := redisCache.NewItemsCache(redis, l)
 	categoriesCache := redisCache.NewCategoriesСache(redis, l)
 
-	filestorage := filestorage.NewOnDiskLocalStorage(cfg.ServerURL, cfg.FsPath, l)
+	filestorage := filestorage.NewFileStorage(cfg.ServerURL, cfg.FsPath, l)
 
 	itemUsecase := item_usecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
 	categoryUsecase := category_usecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
@@ -73,7 +72,7 @@ func main() {
 	cartUsecase := cart_usecase.NewCartUseCase(cartStore, l)
 	orderUsecase := order_usecase.NewOrderUsecase(orderStore, lsug)
 
-	delivery := delivery.NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, l, filestorage, orderUsecase)
+	delivery := delivery.NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, l, orderUsecase)
 
 	router := router.NewRouter(delivery, l)
 	serverOptions := map[string]int{
@@ -161,7 +160,7 @@ func createCacheOnStartService(ctx context.Context, categoryUsecase usecase.ICat
 	return nil
 }
 
-func setAdmin(userStore repository.UserStore, mail string, pass string, logger *zap.Logger) {
+func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap.Logger) {
 	logger.Debug("Enter in main setAdmin()")
 	ctx := context.Background()
 	exist, err := userStore.GetUserByEmail(ctx, mail)
@@ -218,7 +217,7 @@ func setAdmin(userStore repository.UserStore, mail string, pass string, logger *
 	}
 }
 
-func setCustomerRights(userStore repository.UserStore, logger *zap.Logger) {
+func setCustomerRights(userStore usecase.UserStore, logger *zap.Logger) {
 	logger.Debug("Enter in setCustomerRights()")
 	ctx := context.Background()
 

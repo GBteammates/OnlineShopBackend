@@ -59,20 +59,6 @@ func NewRouter(delivery *delivery.Delivery, logger *zap.Logger) *Router {
 	}
 
 	routes := Routes{
-		{
-			"Index",
-			http.MethodGet,
-			"/",
-			noOpMiddleware,
-			delivery.Index,
-		},
-		{
-			"GetFileList",
-			http.MethodGet,
-			"/images/list",
-			AdminAuth(),
-			delivery.GetFileList,
-		},
 		// -------------------------CATEGORY----------------------------------------------------------------------------
 		{
 			"CreateCategory",
@@ -122,6 +108,13 @@ func NewRouter(delivery *delivery.Delivery, logger *zap.Logger) *Router {
 			"/categories/delete/:categoryID",
 			AdminAuth(),
 			delivery.DeleteCategory,
+		},
+		{
+			"GetCategoriesImagesList",
+			http.MethodGet,
+			"/categories/images/list",
+			AdminAuth(),
+			delivery.GetCategoriesImagesList,
 		},
 		// -------------------------ITEM--------------------------------------------------------------------------------
 		{
@@ -235,6 +228,13 @@ func NewRouter(delivery *delivery.Delivery, logger *zap.Logger) *Router {
 			"/items/favList/", //?param=userIDt&offset=20&limit=10&sort_type=name&sort_order=asc (sort_type == name or price, sort_order == asc or desc)
 			UserAuth(),
 			delivery.GetFavouriteItems,
+		},
+		{
+			"GetItemsImagesList",
+			http.MethodGet,
+			"/items/images/list",
+			AdminAuth(),
+			delivery.GetItemsImagesList,
 		},
 		// -------------------------CART--------------------------------------------------------------------------------
 		{

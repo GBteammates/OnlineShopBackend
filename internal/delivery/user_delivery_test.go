@@ -56,9 +56,8 @@ func TestCreateUser(t *testing.T) {
 
 import (
 	"OnlineShopBackend/internal/delivery/user"
-	fs "OnlineShopBackend/internal/repository/mocks"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase/mocks"
+	mocks "OnlineShopBackend/internal/usecase/usecase_mocks"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -122,9 +121,8 @@ func TestCreateRights(t *testing.T) {
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
 	userUsecase := mocks.NewMockIUserUsecase(ctrl)
 	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	filestorage := fs.NewMockFileStorager(ctrl)
 	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, logger, filestorage, orderUsecase)
+	delivery := NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, logger, orderUsecase)
 	ctx := context.Background()
 
 	w := httptest.NewRecorder()

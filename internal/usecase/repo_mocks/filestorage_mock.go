@@ -91,10 +91,10 @@ func (mr *MockFileStoragerMockRecorder) DeleteItemImagesFolderById(id interface{
 }
 
 // GetCategoriesImagesList mocks base method.
-func (m *MockFileStorager) GetCategoriesImagesList() (*[]models.FileInfo, error) {
+func (m *MockFileStorager) GetCategoriesImagesList() ([]*models.FileInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCategoriesImagesList")
-	ret0, _ := ret[0].(*[]models.FileInfo)
+	ret0, _ := ret[0].([]*models.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -106,10 +106,10 @@ func (mr *MockFileStoragerMockRecorder) GetCategoriesImagesList() *gomock.Call {
 }
 
 // GetItemsImagesList mocks base method.
-func (m *MockFileStorager) GetItemsImagesList() (*[]models.FileInfo, error) {
+func (m *MockFileStorager) GetItemsImagesList() ([]*models.FileInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetItemsImagesList")
-	ret0, _ := ret[0].(*[]models.FileInfo)
+	ret0, _ := ret[0].([]*models.FileInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
