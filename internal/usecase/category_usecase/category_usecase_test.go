@@ -1,8 +1,8 @@
-package usecase
+package category_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/mocks"
+	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
 	"fmt"
 	"testing"
@@ -267,7 +267,7 @@ func TestDeleteCategoryCache(t *testing.T) {
 	cache := mocks.NewMockICategoriesCache(ctrl)
 	usecase := NewCategoryUsecase(categoryRepo, cache, logger)
 
-	cache.EXPECT().DeleteCache(ctx, "testNamenameasc").Return(err)
+	cache.EXPECT().DeleteCache(ctx, "testNamenameasc").Return(fmt.Errorf("error"))
 	err := usecase.DeleteCategoryCache(ctx, "testName")
 	require.Error(t, err)
 

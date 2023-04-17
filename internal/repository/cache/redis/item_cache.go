@@ -2,7 +2,7 @@ package redis
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/cache"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ cache.IItemsCache = &ItemsCache{}
+var _ usecase.IItemsCache = &ItemsCache{}
 
 type ItemsCache struct {
 	*RedisCache
@@ -23,7 +23,7 @@ type results struct {
 	Responses []models.Item
 }
 
-func NewItemsCache(cache *RedisCache, logger *zap.Logger) cache.IItemsCache {
+func NewItemsCache(cache *RedisCache, logger *zap.Logger) usecase.IItemsCache {
 	logger.Debug("Enter in cache NewItemsCache")
 	return &ItemsCache{cache, logger}
 }

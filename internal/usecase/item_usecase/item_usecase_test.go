@@ -1,8 +1,8 @@
-package usecase
+package item_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/mocks"
+	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
 	"errors"
 	"fmt"
@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	testId        = uuid.New()
 	testItemId    = uuid.New()
 	testModelItem = models.Item{
 		Title:       "test",
@@ -26,6 +27,9 @@ var (
 		Title:       "test",
 		Description: "test",
 		Category:    models.Category{},
+	}
+	testItem1 = models.Item{
+		Id: testId,
 	}
 	testItemWithId2 = models.Item{
 		Id:       testItemId,

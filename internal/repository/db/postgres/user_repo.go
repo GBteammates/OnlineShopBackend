@@ -1,7 +1,8 @@
-package repository
+package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 
@@ -15,9 +16,9 @@ type user struct {
 	logger  *zap.SugaredLogger
 }
 
-var _ UserStore = (*user)(nil)
+var _ usecase.UserStore = (*user)(nil)
 
-func NewUser(storage *PGres, logger *zap.SugaredLogger) UserStore {
+func NewUser(storage *PGres, logger *zap.SugaredLogger) usecase.UserStore {
 	return &user{
 		storage: storage,
 		logger:  logger,

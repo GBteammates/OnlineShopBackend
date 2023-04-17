@@ -1,10 +1,8 @@
-package usecase
+package item_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
-	"OnlineShopBackend/internal/repository/cache"
-	"OnlineShopBackend/internal/repository/filestorage"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"errors"
 	"fmt"
@@ -16,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ IItemUsecase = &ItemUsecase{}
+var _ usecase.IItemUsecase = &ItemUsecase{}
 
 // Keys for create and get cache
 const (
@@ -29,13 +27,13 @@ const (
 )
 
 type ItemUsecase struct {
-	itemStore   repository.ItemStore
-	itemCache   cache.IItemsCache
-	filestorage filestorage.FileStorager
+	itemStore   usecase.ItemStore
+	itemCache   usecase.IItemsCache
+	filestorage usecase.FileStorager
 	logger      *zap.Logger
 }
 
-func NewItemUsecase(itemStore repository.ItemStore, itemCache cache.IItemsCache, filestorage filestorage.FileStorager, logger *zap.Logger) IItemUsecase {
+func NewItemUsecase(itemStore usecase.ItemStore, itemCache usecase.IItemsCache, filestorage usecase.FileStorager, logger *zap.Logger) usecase.IItemUsecase {
 	logger.Debug("Enter in usecase NewItemUsecase()")
 	return &ItemUsecase{
 		itemStore:   itemStore,

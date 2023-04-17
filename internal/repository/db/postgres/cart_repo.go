@@ -1,7 +1,8 @@
-package repository
+package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"strings"
@@ -16,9 +17,9 @@ type cart struct {
 	logger  *zap.SugaredLogger
 }
 
-var _ CartStore = (*cart)(nil)
+var _ usecase.CartStore = (*cart)(nil)
 
-func NewCartStore(storage *PGres, logger *zap.SugaredLogger) CartStore {
+func NewCartStore(storage *PGres, logger *zap.SugaredLogger) usecase.CartStore {
 	return &cart{
 		storage: storage,
 		logger:  logger,

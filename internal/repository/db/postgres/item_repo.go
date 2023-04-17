@@ -1,7 +1,8 @@
-package repository
+package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"strings"
@@ -12,20 +13,20 @@ import (
 	"go.uber.org/zap"
 )
 
+var _ usecase.ItemStore = (*itemRepo)(nil)
+
 type itemRepo struct {
 	storage *PGres
 	logger  *zap.SugaredLogger
 }
 
-func NewItemRepo(storage *PGres, logger *zap.SugaredLogger) ItemStore {
+func NewItemRepo(storage *PGres, logger *zap.SugaredLogger) usecase.ItemStore {
 	logger.Debug("Enter in repository NewItemRepo()")
 	return &itemRepo{
 		storage: storage,
 		logger:  logger,
 	}
 }
-
-var _ ItemStore = (*itemRepo)(nil)
 
 // CreateItem insert new item in database
 func (repo *itemRepo) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
@@ -128,7 +129,7 @@ func (repo *itemRepo) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, 
 	pool := repo.storage.GetPool()
 
 	item := models.Item{}
-	row := pool.QueryRow(ctx,`
+	row := pool.QueryRow(ctx, `
 	SELECT 
 	items.id, 
 	items.name, 

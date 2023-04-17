@@ -11,6 +11,11 @@ import (
 	redisCache "OnlineShopBackend/internal/repository/cache/redis"
 	"OnlineShopBackend/internal/repository/filestorage"
 	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/cart_usecase"
+	"OnlineShopBackend/internal/usecase/category_usecase"
+	"OnlineShopBackend/internal/usecase/item_usecase"
+	"OnlineShopBackend/internal/usecase/order_usecase"
+	"OnlineShopBackend/internal/usecase/user_usecase"
 	"OnlineShopBackend/logger"
 	"context"
 	"fmt"
@@ -62,12 +67,11 @@ func main() {
 
 	filestorage := filestorage.NewOnDiskLocalStorage(cfg.ServerURL, cfg.FsPath, l)
 
-	itemUsecase := usecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
-	categoryUsecase := usecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
-	userUsecase := usecase.NewUserUsecase(userStore, l)
-
-	cartUsecase := usecase.NewCartUseCase(cartStore, l)
-	orderUsecase := usecase.NewOrderUsecase(orderStore, lsug)
+	itemUsecase := item_usecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
+	categoryUsecase := category_usecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
+	userUsecase := user_usecase.NewUserUsecase(userStore, l)
+	cartUsecase := cart_usecase.NewCartUseCase(cartStore, l)
+	orderUsecase := order_usecase.NewOrderUsecase(orderStore, lsug)
 
 	delivery := delivery.NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, l, filestorage, orderUsecase)
 

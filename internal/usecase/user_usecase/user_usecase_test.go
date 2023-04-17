@@ -1,9 +1,10 @@
-package usecase
+package user_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/mocks"
+	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -27,7 +28,7 @@ func TestCreateRights(t *testing.T) {
 	usecase := NewUserUsecase(userRepo, logger)
 	ctx := context.Background()
 
-	userRepo.EXPECT().CreateRights(ctx, testRightsNoId).Return(uuid.Nil, err)
+	userRepo.EXPECT().CreateRights(ctx, testRightsNoId).Return(uuid.Nil, fmt.Errorf("error"))
 	res, err := usecase.CreateRights(ctx, testRightsNoId)
 	require.Error(t, err)
 	require.Equal(t, res, uuid.Nil)

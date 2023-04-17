@@ -1,10 +1,8 @@
-package usecase
+package category_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
-	"OnlineShopBackend/internal/repository/cache"
-	"OnlineShopBackend/internal/repository/filestorage"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"sort"
@@ -15,20 +13,20 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ ICategoryUsecase = &CategoryUsecase{}
+var _ usecase.ICategoryUsecase = &CategoryUsecase{}
 
 var (
 	categoriesListKey = "CategoriesList"
 )
 
 type CategoryUsecase struct {
-	categoryStore  repository.CategoryStore
-	categoriesCache cache.ICategoriesCache
-	filestorage    filestorage.FileStorager
-	logger         *zap.Logger
+	categoryStore   usecase.CategoryStore
+	categoriesCache usecase.ICategoriesCache
+	filestorage     usecase.FileStorager
+	logger          *zap.Logger
 }
 
-func NewCategoryUsecase(store repository.CategoryStore, cache cache.ICategoriesCache, logger *zap.Logger) ICategoryUsecase {
+func NewCategoryUsecase(store usecase.CategoryStore, cache usecase.ICategoriesCache, logger *zap.Logger) usecase.ICategoryUsecase {
 	logger.Debug("Enter in usecase NewCategoryUsecase()")
 	return &CategoryUsecase{categoryStore: store, categoriesCache: cache, logger: logger}
 }

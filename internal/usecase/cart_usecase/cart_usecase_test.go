@@ -1,9 +1,10 @@
-package usecase
+package cart_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/mocks"
+	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -13,15 +14,13 @@ import (
 )
 
 var (
+	testId         = uuid.New()
 	testModelsCart = &models.Cart{
 		Id:    testId,
 		Items: testItems,
 	}
 	testItem = models.ItemWithQuantity{
 		Quantity: 1,
-	}
-	testItem1 = models.Item{
-		Id: testId,
 	}
 	testItems = []models.ItemWithQuantity{
 		testItem,
@@ -36,7 +35,7 @@ func TestGetCart(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().GetCart(ctx, testId).Return(nil, err)
+	cartRepo.EXPECT().GetCart(ctx, testId).Return(nil, fmt.Errorf("error"))
 	res, err := usecase.GetCart(ctx, testId)
 	require.Error(t, err)
 	require.Nil(t, res)
@@ -56,7 +55,7 @@ func TestGetCartByUserId(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().GetCartByUserId(ctx, testId).Return(nil, err)
+	cartRepo.EXPECT().GetCartByUserId(ctx, testId).Return(nil, fmt.Errorf("error"))
 	res, err := usecase.GetCartByUserId(ctx, testId)
 	require.Error(t, err)
 	require.Nil(t, res)
@@ -76,7 +75,7 @@ func TestDeleteItemFromCart(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().DeleteItemFromCart(ctx, testId, testId).Return(err)
+	cartRepo.EXPECT().DeleteItemFromCart(ctx, testId, testId).Return(fmt.Errorf("error"))
 	err := usecase.DeleteItemFromCart(ctx, testId, testId)
 	require.Error(t, err)
 
@@ -93,7 +92,7 @@ func TestCreate(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().Create(ctx, testId).Return(uuid.Nil, err)
+	cartRepo.EXPECT().Create(ctx, testId).Return(uuid.Nil, fmt.Errorf("error"))
 	res, err := usecase.Create(ctx, testId)
 	require.Error(t, err)
 	require.Equal(t, res, uuid.Nil)
@@ -112,7 +111,7 @@ func TestAddItemToCart(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().AddItemToCart(ctx, testId, testId).Return(err)
+	cartRepo.EXPECT().AddItemToCart(ctx, testId, testId).Return(fmt.Errorf("error"))
 	err := usecase.AddItemToCart(ctx, testId, testId)
 	require.Error(t, err)
 
@@ -129,7 +128,7 @@ func TestDeleteCart(t *testing.T) {
 	usecase := NewCartUseCase(cartRepo, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().DeleteCart(ctx, testId).Return(err)
+	cartRepo.EXPECT().DeleteCart(ctx, testId).Return(fmt.Errorf("error"))
 	err := usecase.DeleteCart(ctx, testId)
 	require.Error(t, err)
 

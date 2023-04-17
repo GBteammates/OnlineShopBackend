@@ -2,7 +2,7 @@ package redis
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository/cache"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ cache.ICategoriesCache = &CategoriesСache{}
+var _ usecase.ICategoriesCache = &CategoriesСache{}
 
 type CategoriesСache struct {
 	*RedisCache
@@ -22,7 +22,7 @@ type categoriesData struct {
 	Categories []models.Category `json:"categories"`
 }
 
-func NewCategoriesСache(cache *RedisCache, logger *zap.Logger) cache.ICategoriesCache {
+func NewCategoriesСache(cache *RedisCache, logger *zap.Logger) usecase.ICategoriesCache {
 	logger.Debug("Enter in cache NewCategoriesСache()")
 	return &CategoriesСache{cache, logger}
 }

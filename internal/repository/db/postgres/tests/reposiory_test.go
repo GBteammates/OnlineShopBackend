@@ -1,6 +1,6 @@
 //go:build integration
 
-package repository_test
+package postgres_test
 
 import (
 	"OnlineShopBackend/internal/models"

@@ -1,7 +1,8 @@
-package repository
+package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"strings"
@@ -17,9 +18,9 @@ type categoryRepo struct {
 	logger  *zap.SugaredLogger
 }
 
-var _ CategoryStore = (*categoryRepo)(nil)
+var _ usecase.CategoryStore = (*categoryRepo)(nil)
 
-func NewCategoryRepo(store *PGres, log *zap.SugaredLogger) CategoryStore {
+func NewCategoryRepo(store *PGres, log *zap.SugaredLogger) usecase.CategoryStore {
 	return &categoryRepo{
 		storage: store,
 		logger:  log,
@@ -86,8 +87,8 @@ func (repo *categoryRepo) CreateCategory(ctx context.Context, category *models.C
 	return id, nil
 }
 
-// isDeletedCategory check created category name and if it is a deleted category name, returns 
-// uid of deleted category and true 
+// isDeletedCategory check created category name and if it is a deleted category name, returns
+// uid of deleted category and true
 func (repo *categoryRepo) isDeletedCategory(ctx context.Context, name string) (uuid.UUID, bool) {
 	repo.logger.Debug("Enter in repository is DeletedCategory() with args: ctx, name: %s", name)
 	pool := repo.storage.GetPool()
@@ -154,7 +155,7 @@ func (repo *categoryRepo) GetCategory(ctx context.Context, id uuid.UUID) (*model
 	pool := repo.storage.GetPool()
 
 	category := models.Category{}
-	
+
 	row := pool.QueryRow(ctx,
 		`SELECT id, name, description, picture FROM categories WHERE deleted_at is null AND id = $1`, id)
 	err := row.Scan(
@@ -200,7 +201,7 @@ func (repo *categoryRepo) GetCategoryByName(ctx context.Context, name string) (*
 	return &category, nil
 }
 
-// GetCategoryList reads all the categories from the database and writes it to the 
+// GetCategoryList reads all the categories from the database and writes it to the
 // output channel and returns this channel or error
 func (repo *categoryRepo) GetCategoryList(ctx context.Context) (chan models.Category, error) {
 	repo.logger.Debug("Enter in repository GetCategoryList() with args: ctx")

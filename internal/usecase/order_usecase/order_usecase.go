@@ -1,8 +1,8 @@
-package usecase
+package order_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"time"
@@ -12,13 +12,13 @@ import (
 )
 
 type order struct {
-	orderStore repository.OrderStore
+	orderStore usecase.OrderStore
 	logger     *zap.SugaredLogger
 }
 
-var _ IOrderUsecase = (*order)(nil)
+var _ usecase.IOrderUsecase = (*order)(nil)
 
-func NewOrderUsecase(orderStore repository.OrderStore, logger *zap.SugaredLogger) IOrderUsecase {
+func NewOrderUsecase(orderStore usecase.OrderStore, logger *zap.SugaredLogger) usecase.IOrderUsecase {
 	return &order{
 		orderStore: orderStore,
 		logger:     logger,

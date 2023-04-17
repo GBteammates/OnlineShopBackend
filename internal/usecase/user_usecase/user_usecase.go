@@ -1,9 +1,9 @@
-package usecase
+package user_usecase
 
 import (
 	"OnlineShopBackend/internal/delivery/user"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 
@@ -11,14 +11,14 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ IUserUsecase = &UserUsecase{}
+var _ usecase.IUserUsecase = &UserUsecase{}
 
 type UserUsecase struct {
-	userStore repository.UserStore
+	userStore usecase.UserStore
 	logger    *zap.Logger
 }
 
-func NewUserUsecase(userStore repository.UserStore, logger *zap.Logger) IUserUsecase {
+func NewUserUsecase(userStore usecase.UserStore, logger *zap.Logger) usecase.IUserUsecase {
 	return &UserUsecase{userStore: userStore, logger: logger}
 }
 
@@ -107,7 +107,7 @@ func (usecase *UserUsecase) UpdateUserData(ctx context.Context, id uuid.UUID, us
 	userData := &models.User{
 		Firstname: user.Firstname,
 		Lastname:  user.Lastname,
-		Address:   models.UserAddress{
+		Address: models.UserAddress{
 			Zipcode: user.Address.Zipcode,
 			Country: user.Address.Country,
 			City:    user.Address.City,

@@ -1,8 +1,8 @@
-package usecase
+package order_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"testing"
@@ -72,7 +72,7 @@ type orderRepoMock struct {
 	err error
 }
 
-var _ repository.OrderStore = (*orderRepoMock)(nil)
+var _ usecase.OrderStore = (*orderRepoMock)(nil)
 
 func (orMock *orderRepoMock) Create(ctx context.Context, order *models.Order) (*models.Order, error) {
 	order.ID, _ = uuid.NewRandom()

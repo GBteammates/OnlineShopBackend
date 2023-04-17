@@ -1,22 +1,22 @@
-package usecase
+package cart_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/repository"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-var _ ICartUsecase = &CartUseCase{}
+var _ usecase.ICartUsecase = &CartUseCase{}
 
 type CartUseCase struct {
-	store  repository.CartStore
+	store  usecase.CartStore
 	logger *zap.Logger
 }
 
-func NewCartUseCase(store repository.CartStore, logger *zap.Logger) ICartUsecase {
+func NewCartUseCase(store usecase.CartStore, logger *zap.Logger) usecase.ICartUsecase {
 	logger.Debug("Enter in usecase NewCartUseCase()")
 	cart := &CartUseCase{store: store, logger: logger}
 	return cart

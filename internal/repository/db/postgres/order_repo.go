@@ -1,7 +1,8 @@
-package repository
+package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
+	"OnlineShopBackend/internal/usecase"
 	"context"
 	"fmt"
 	"strings"
@@ -16,9 +17,9 @@ type order struct {
 	logger  *zap.SugaredLogger
 }
 
-var _ OrderStore = (*order)(nil)
+var _ usecase.OrderStore = (*order)(nil)
 
-func NewOrderRepo(store *PGres, log *zap.SugaredLogger) OrderStore {
+func NewOrderRepo(store *PGres, log *zap.SugaredLogger) usecase.OrderStore {
 	return &order{
 		storage: store,
 		logger:  log,
