@@ -59,7 +59,7 @@ func main() {
 
 	redis, err := redisCache.NewRedisCache(cfg.CashHost, cfg.CashPort, time.Duration(cfg.CashTTL), l)
 	if err != nil {
-		log.Fatalf("can't initialize cash: %v", err)
+		log.Fatalf("can't initialize cache: %v", err)
 	}
 	itemsCache := redisCache.NewItemsCache(redis, l)
 	categoriesCache := redisCache.NewCategoriesСache(redis, l)
@@ -72,9 +72,12 @@ func main() {
 	cartUsecase := cart_usecase.NewCartUseCase(cartStore, l)
 	orderUsecase := order_usecase.NewOrderUsecase(orderStore, lsug)
 
-	delivery := delivery.NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, l, orderUsecase)
+	itemDelivery := delivery.NewItemDelivery(itemUsecase, categoryUsecase, lsug)
+	cartDelivery := delivery.NewCartDelivery(cartUsecase, lsug)
+	orderDelivery := delivery.NewOrderDelivery(orderUsecase, lsug)
+	userDelivery := delivery.NewUserDelivery(userUsecase, lsug)
 
-	router := router.NewRouter(delivery, l)
+	router := router.NewRouter(itemDelivery, cartDelivery, orderDelivery, userDelivery, l)
 	serverOptions := map[string]int{
 		"ReadTimeout":       cfg.ReadTimeout,
 		"WriteTimeout":      cfg.WriteTimeout,

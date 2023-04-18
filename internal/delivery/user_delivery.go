@@ -28,6 +28,13 @@ type UserDelivery struct {
 	logger      *zap.SugaredLogger
 }
 
+func NewUserDelivery(userUsecase usecase.IUserUsecase, logger *zap.SugaredLogger) *UserDelivery {
+	return &UserDelivery{
+		userUsecase: userUsecase,
+		logger:      logger,
+	}
+}
+
 const (
 	authorizationHeader = "Authorization"
 )
