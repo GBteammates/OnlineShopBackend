@@ -8,7 +8,7 @@ import (
 	"OnlineShopBackend/internal/delivery/user/jwtauth"
 	"OnlineShopBackend/internal/metrics"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"errors"
 	"fmt"

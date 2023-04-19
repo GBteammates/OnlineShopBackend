@@ -117,12 +117,8 @@ func TestCreateRights(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	logger := zap.L()
-	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
-	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
 	userUsecase := mocks.NewMockIUserUsecase(ctrl)
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, userUsecase, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewUserDelivery(userUsecase, logger.Sugar())
 	ctx := context.Background()
 
 	w := httptest.NewRecorder()

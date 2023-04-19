@@ -7,7 +7,7 @@ import (
 	"OnlineShopBackend/internal/delivery/item"
 	"OnlineShopBackend/internal/delivery/order"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"net/http"
 	"strings"
 

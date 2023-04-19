@@ -120,16 +120,16 @@ groupimports:
 	find . -type f -name '*.go' ! -path './.git/*' | xargs -L 1 python3 third_party/groupimports.py
 
 mock_db:
-	mockgen -source=internal/usecase/db_interface.go -destination=internal/usecase/repo_mocks/db_mock.go -package=mocks
+	mockgen -source=internal/usecase/interfaces/db_interface.go -destination=internal/usecase/repo_mocks/db_mock.go -package=mocks
 
 mock_cache:
-	mockgen -source=internal/usecase/cache_interface.go -destination=internal/usecase/repo_mocks/cache_mock.go -package=mocks Cache
+	mockgen -source=internal/usecase/interfaces/cache_interface.go -destination=internal/usecase/repo_mocks/cache_mock.go -package=mocks Cache
 
 mock_usecase:
-	mockgen -source=internal/usecase/usecase_interface.go -destination=internal/usecase/usecase_mocks/usecase_mock.go -package=mocks
+	mockgen -source=internal/usecase/interfaces/usecase_interface.go -destination=internal/usecase/usecase_mocks/usecase_mock.go -package=mocks
 
 mock_fs:
-	mockgen -source=internal/usecase/fs_interface.go -destination=internal/usecase/repo_mocks/filestorage_mock.go -package=mocks FileStorager
+	mockgen -source=internal/usecase/interfaces/fs_interface.go -destination=internal/usecase/repo_mocks/filestorage_mock.go -package=mocks FileStorager
 
 up:
 	docker-compose up -d

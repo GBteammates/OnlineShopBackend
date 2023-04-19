@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
 	"strings"

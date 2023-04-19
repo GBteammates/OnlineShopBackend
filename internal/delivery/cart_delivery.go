@@ -4,7 +4,7 @@ import (
 	"OnlineShopBackend/internal/delivery/cart"
 	"OnlineShopBackend/internal/delivery/helper"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"errors"
 	"fmt"
 	"net/http"

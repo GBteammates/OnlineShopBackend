@@ -17,8 +17,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/golang-module/carbon/v2"
-
 	"github.com/golang/mock/gomock"
 
 	"github.com/google/uuid"
@@ -153,18 +151,6 @@ var (
 		Price:  10,
 		Vendor: "testVendor",
 	}
-	testModelsItemWithId2 = &models.Item{
-		Id:          testId,
-		Title:       "testTitle",
-		Description: "testDescription",
-		Category: models.Category{
-			Id:          testId,
-			Name:        "testName",
-			Description: "testDescription",
-		},
-		Price:  10,
-		Vendor: "testVendor",
-	}
 	testShortModelsItemWithIdWithEmptyImage2 = &models.Item{
 		Id:          testId,
 		Title:       "testTitle",
@@ -186,19 +172,6 @@ var (
 		Price:  10,
 		Vendor: "testVendor",
 		Images: []string{"testName"},
-	}
-	testModelsItemWithImage2 = models.Item{
-		Id:          testId,
-		Title:       "testTitle",
-		Description: "testDescription",
-		Category: models.Category{
-			Id:          testId,
-			Name:        "testName",
-			Description: "testDescription",
-		},
-		Price:  10,
-		Vendor: "testVendor",
-		Images: []string{"testName.jpeg"},
 	}
 	testEmptyItem = item.ShortItem{
 		Title:       "",
@@ -258,10 +231,7 @@ func TestCreateItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -349,10 +319,7 @@ func TestGetItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -405,10 +372,7 @@ func TestUpdateItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -531,10 +495,7 @@ func TestItemsList(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -648,10 +609,7 @@ func TestItemsQuantity(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -687,10 +645,7 @@ func TestSearchLine(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -779,10 +734,7 @@ func TestGetItemsByCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -871,10 +823,7 @@ func TestUploadItemImage(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -913,7 +862,7 @@ func TestUploadItemImage(t *testing.T) {
 		},
 	}
 	MockFile(c, "jpeg", testFile)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, fmt.Errorf("error"))
+	itemUsecase.EXPECT().UploadItemImage(ctx, testId, gomock.Any(), testFile).Return(fmt.Errorf("error"))
 	delivery.UploadItemImage(c)
 	require.Equal(t, 500, w.Code)
 
@@ -930,7 +879,7 @@ func TestUploadItemImage(t *testing.T) {
 		},
 	}
 	MockFile(c, "jpeg", testFile)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, models.ErrorNotFound{})
+	itemUsecase.EXPECT().UploadItemImage(ctx, testId, gomock.Any(), testFile).Return(models.ErrorNotFound{})
 	delivery.UploadItemImage(c)
 	require.Equal(t, 404, w.Code)
 
@@ -947,10 +896,9 @@ func TestUploadItemImage(t *testing.T) {
 		},
 	}
 	MockFile(c, "jpeg", testFile)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, nil)
-	itemUsecase.EXPECT().UploadItemImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".jpeg", testFile).Return("", fmt.Errorf("error"))
+	itemUsecase.EXPECT().UploadItemImage(ctx, testId, gomock.Any(), testFile).Return(nil)
 	delivery.UploadItemImage(c)
-	require.Equal(t, 507, w.Code)
+	require.Equal(t, 201, w.Code)
 
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
@@ -965,46 +913,7 @@ func TestUploadItemImage(t *testing.T) {
 		},
 	}
 	MockFile(c, "png", testFile)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, nil)
-	itemUsecase.EXPECT().UploadItemImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".png", testFile).Return("", fmt.Errorf("error"))
-	delivery.UploadItemImage(c)
-	require.Equal(t, 507, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Params = []gin.Param{
-		{
-			Key:   "itemID",
-			Value: testId.String(),
-		},
-	}
-	MockFile(c, "jpeg", testFile)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(testModelsItemWithId, nil)
-	itemUsecase.EXPECT().UploadItemImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".jpeg", testFile).Return("testName", nil)
-	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemWithImage).Return(fmt.Errorf("error"))
-	delivery.UploadItemImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Params = []gin.Param{
-		{
-			Key:   "itemID",
-			Value: testId.String(),
-		},
-	}
-	MockFile(c, "jpeg", testFile)
-	itemUsecase.EXPECT().UploadItemImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".jpeg", testFile).Return("testName", nil)
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(testModelsItemWithId2, nil)
-	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemWithImage).Return(nil)
+	itemUsecase.EXPECT().UploadItemImage(ctx, testId, gomock.Any(), testFile).Return(nil)
 	delivery.UploadItemImage(c)
 	require.Equal(t, 201, w.Code)
 }
@@ -1016,10 +925,7 @@ func TestDeleteItemImage(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1037,7 +943,18 @@ func TestDeleteItemImage(t *testing.T) {
 		Header: make(http.Header),
 	}
 	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpg", testId.String()))
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, models.ErrorNotFound{})
+	itemUsecase.EXPECT().DeleteItemImage(ctx, testId, "testName.jpg").Return(fmt.Errorf("error"))
+	delivery.DeleteItemImage(c)
+	require.Equal(t, 500, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpg", testId.String()))
+	itemUsecase.EXPECT().DeleteItemImage(ctx, testId, "testName.jpg").Return(models.ErrorNotFound{})
 	delivery.DeleteItemImage(c)
 	require.Equal(t, 404, w.Code)
 
@@ -1048,47 +965,7 @@ func TestDeleteItemImage(t *testing.T) {
 		Header: make(http.Header),
 	}
 	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpg", testId.String()))
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, err)
-	delivery.DeleteItemImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpg", testId.String()))
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&models.Item{}, nil)
-	itemUsecase.EXPECT().DeleteItemImage(context.Background(), testId.String(), "testName.jpg").Return(fmt.Errorf("error"))
-	delivery.DeleteItemImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpeg", testId.String()))
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&testModelsItemWithImage2, nil)
-	itemUsecase.EXPECT().DeleteItemImage(context.Background(), testId.String(), "testName.jpeg").Return(nil)
-	testModelsItemWithImage2.Images = []string{}
-	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemWithImage2).Return(fmt.Errorf("error"))
-	delivery.DeleteItemImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName.jpeg", testId.String()))
-	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&testModelsItemWithImage2, nil)
-	itemUsecase.EXPECT().DeleteItemImage(context.Background(), testId.String(), "testName.jpeg").Return(nil)
-	testModelsItemWithImage2.Images = []string{}
-	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemWithImage2).Return(nil)
+	itemUsecase.EXPECT().DeleteItemImage(ctx, testId, "testName.jpg").Return(nil)
 	delivery.DeleteItemImage(c)
 	require.Equal(t, 200, w.Code)
 }
@@ -1100,10 +977,7 @@ func TestDeleteItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1157,6 +1031,22 @@ func TestDeleteItem(t *testing.T) {
 			Value: testId.String(),
 		},
 	}
+	itemUsecase.EXPECT().GetItem(ctx, testId).Return(nil, models.ErrorNotFound{})
+	delivery.DeleteItem(c)
+	require.Equal(t, 404, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+	c.Params = []gin.Param{
+		{
+			Key:   "itemID",
+			Value: testId.String(),
+		},
+	}
 	itemUsecase.EXPECT().GetItem(ctx, testId).Return(testModelsItemWithId, nil)
 	itemUsecase.EXPECT().DeleteItem(ctx, testId).Return(fmt.Errorf("error"))
 	delivery.DeleteItem(c)
@@ -1174,10 +1064,27 @@ func TestDeleteItem(t *testing.T) {
 			Value: testId.String(),
 		},
 	}
+	itemUsecase.EXPECT().GetItem(ctx, testId).Return(testModelsItemWithId, nil)
+	itemUsecase.EXPECT().DeleteItem(ctx, testId).Return(models.ErrorNotFound{})
+	delivery.DeleteItem(c)
+	require.Equal(t, 404, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+	c.Params = []gin.Param{
+		{
+			Key:   "itemID",
+			Value: testId.String(),
+		},
+	}
 	itemUsecase.EXPECT().GetItem(ctx, testId).Return(&testModelsItemWithImage, nil)
 	itemUsecase.EXPECT().DeleteItem(ctx, testId).Return(nil)
 	itemUsecase.EXPECT().UpdateItemsInCategoryCache(ctx, &testModelsItemWithImage, "delete").Return(fmt.Errorf("error"))
-	itemUsecase.EXPECT().DeleteItemImagesFolderById(context.Background(), testId.String()).Return(fmt.Errorf("error"))
+	itemUsecase.EXPECT().DeleteItemImagesFolderById(ctx, testId).Return(fmt.Errorf("error"))
 	delivery.DeleteItem(c)
 	require.Equal(t, 200, w.Code)
 }
@@ -1189,10 +1096,7 @@ func TestItemsQuantityInCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1251,10 +1155,7 @@ func TestItemsQuantityInFavourite(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1313,10 +1214,7 @@ func TestAddFavouriteItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1369,10 +1267,7 @@ func TestDeleteFavouriteItem(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1476,10 +1371,7 @@ func TestGetFavouriteItems(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -1551,10 +1443,7 @@ func TestItemsQuantityInSearch(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

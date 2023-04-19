@@ -2,7 +2,7 @@ package order_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
 	"testing"
@@ -88,6 +88,14 @@ func (orMock *orderRepoMock) ChangeAddress(ctx context.Context, order *models.Or
 func (orMock *orderRepoMock) ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error {
 	order.Status = status
 	return orMock.err
+}
+
+func (orMock *orderRepoMock) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
+func (orMock *orderRepoMock) DeleteCart(ctx context.Context, id uuid.UUID) error {
+	return nil
 }
 
 func (orMock *orderRepoMock) GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error) {

@@ -3,7 +3,7 @@ package user_usecase
 import (
 	"OnlineShopBackend/internal/delivery/user"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
 

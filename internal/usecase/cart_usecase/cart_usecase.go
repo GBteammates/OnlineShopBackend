@@ -2,7 +2,7 @@ package cart_usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 
 	"github.com/google/uuid"

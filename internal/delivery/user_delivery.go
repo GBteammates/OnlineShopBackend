@@ -7,7 +7,7 @@ import (
 	"OnlineShopBackend/internal/delivery/user/jwtauth"
 	"OnlineShopBackend/internal/delivery/user/password"
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase"
+	"OnlineShopBackend/internal/usecase/interfaces"
 	"OnlineShopBackend/internal/usecase/user_usecase"
 	"errors"
 	"fmt"

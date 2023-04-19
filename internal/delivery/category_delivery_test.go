@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-module/carbon/v2"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -59,11 +58,6 @@ var (
 		Name:        "testName",
 		Description: "testDescription",
 	}
-	testModelsCategoryWithId2 = &models.Category{
-		Id:          testId,
-		Name:        "testName",
-		Description: "testDescription",
-	}
 	testEmptyCategory = category.ShortCategory{
 		Name:        "",
 		Description: "",
@@ -80,12 +74,6 @@ var (
 	testList    = []models.Category{*testModelsCategoryWithId}
 	testOutList = []category.Category{
 		testCategoryWithId,
-	}
-	testCategoryWithImage = models.Category{
-		Id:          testId,
-		Name:        "testName",
-		Description: "testDescription",
-		Image:       "testImagePath",
 	}
 	testNoCategory = models.Category{
 		Name:        "NoCategory",
@@ -146,10 +134,7 @@ func TestCreateCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -220,10 +205,7 @@ func TestUpdateCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -341,10 +323,7 @@ func TestGetCategoryList(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -377,10 +356,7 @@ func TestGetCategoryList2(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -412,10 +388,7 @@ func TestGetCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -499,10 +472,7 @@ func TestUploadCategoryImage(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -558,25 +528,7 @@ func TestUploadCategoryImage(t *testing.T) {
 		},
 	}
 	MockCatFile(c, "jpeg", testFile)
-	categoryUsecase.EXPECT().UploadCategoryImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".jpeg", testFile).Return("", fmt.Errorf("error"))
-	delivery.UploadCategoryImage(c)
-	require.Equal(t, 507, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Params = []gin.Param{
-		{
-			Key:   "categoryID",
-			Value: testId.String(),
-		},
-	}
-	MockCatFile(c, "png", testFile)
-	categoryUsecase.EXPECT().UploadCategoryImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".png", testFile).Return("testImagePath", nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testEmptyModelsCategory, fmt.Errorf("error"))
+	categoryUsecase.EXPECT().UploadCategoryImage(ctx, testId, gomock.Any(), testFile).Return(fmt.Errorf("error"))
 	delivery.UploadCategoryImage(c)
 	require.Equal(t, 500, w.Code)
 
@@ -592,9 +544,8 @@ func TestUploadCategoryImage(t *testing.T) {
 			Value: testId.String(),
 		},
 	}
-	MockCatFile(c, "png", testFile)
-	categoryUsecase.EXPECT().UploadCategoryImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".png", testFile).Return("testImagePath", nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testEmptyModelsCategory, models.ErrorNotFound{})
+	MockCatFile(c, "jpeg", testFile)
+	categoryUsecase.EXPECT().UploadCategoryImage(ctx, testId, gomock.Any(), testFile).Return(models.ErrorNotFound{})
 	delivery.UploadCategoryImage(c)
 	require.Equal(t, 404, w.Code)
 
@@ -610,12 +561,10 @@ func TestUploadCategoryImage(t *testing.T) {
 			Value: testId.String(),
 		},
 	}
-	MockCatFile(c, "png", testFile)
-	categoryUsecase.EXPECT().UploadCategoryImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".png", testFile).Return("testImagePath", nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(testModelsCategoryWithId, nil)
-	categoryUsecase.EXPECT().UpdateCategory(ctx, &testCategoryWithImage).Return(fmt.Errorf("error"))
+	MockCatFile(c, "jpeg", testFile)
+	categoryUsecase.EXPECT().UploadCategoryImage(ctx, testId, gomock.Any(), testFile).Return(nil)
 	delivery.UploadCategoryImage(c)
-	require.Equal(t, 500, w.Code)
+	require.Equal(t, 201, w.Code)
 
 	w = httptest.NewRecorder()
 	c, _ = gin.CreateTestContext(w)
@@ -630,9 +579,7 @@ func TestUploadCategoryImage(t *testing.T) {
 		},
 	}
 	MockCatFile(c, "png", testFile)
-	categoryUsecase.EXPECT().UploadCategoryImage(context.Background(), testId.String(), carbon.Now().ToShortDateTimeString()+".png", testFile).Return("testImagePath", nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(testModelsCategoryWithId, nil)
-	categoryUsecase.EXPECT().UpdateCategory(ctx, &testCategoryWithImage).Return(nil)
+	categoryUsecase.EXPECT().UploadCategoryImage(ctx, testId, gomock.Any(), testFile).Return(nil)
 	delivery.UploadCategoryImage(c)
 	require.Equal(t, 201, w.Code)
 }
@@ -644,10 +591,7 @@ func TestDeleteCategoryImage(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -675,29 +619,7 @@ func TestDeleteCategoryImage(t *testing.T) {
 		Header: make(http.Header),
 	}
 	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testName").Return(fmt.Errorf("error"))
-	delivery.DeleteCategoryImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()+"l"))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String()+"l", "testName").Return(nil)
-	delivery.DeleteCategoryImage(c)
-	require.Equal(t, 400, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testName").Return(fmt.Errorf("error"))
+	categoryUsecase.EXPECT().DeleteCategoryImage(ctx, testId, "testName").Return(fmt.Errorf("error"))
 	delivery.DeleteCategoryImage(c)
 	require.Equal(t, 500, w.Code)
 
@@ -708,20 +630,7 @@ func TestDeleteCategoryImage(t *testing.T) {
 		Header: make(http.Header),
 	}
 	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testName").Return(nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testEmptyModelsCategory, fmt.Errorf("error"))
-	delivery.DeleteCategoryImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testName").Return(nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testEmptyModelsCategory, models.ErrorNotFound{})
+	categoryUsecase.EXPECT().DeleteCategoryImage(ctx, testId, "testName").Return(models.ErrorNotFound{})
 	delivery.DeleteCategoryImage(c)
 	require.Equal(t, 404, w.Code)
 
@@ -731,23 +640,8 @@ func TestDeleteCategoryImage(t *testing.T) {
 	c.Request = &http.Request{
 		Header: make(http.Header),
 	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testImagePath", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testImagePath").Return(nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testCategoryWithImage, nil)
-	categoryUsecase.EXPECT().UpdateCategory(ctx, testModelsCategoryWithId2).Return(fmt.Errorf("error"))
-	delivery.DeleteCategoryImage(c)
-	require.Equal(t, 500, w.Code)
-
-	w = httptest.NewRecorder()
-	c, _ = gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
-	}
-	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testImagePath", testId.String()))
-	categoryUsecase.EXPECT().DeleteCategoryImage(context.Background(), testId.String(), "testImagePath").Return(nil)
-	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(&testCategoryWithImage, nil)
-	categoryUsecase.EXPECT().UpdateCategory(ctx, testModelsCategoryWithId2).Return(nil)
+	c.Request.URL, _ = url.Parse(fmt.Sprintf("?id=%s&name=testName", testId.String()))
+	categoryUsecase.EXPECT().DeleteCategoryImage(ctx, testId, "testName").Return(nil)
 	delivery.DeleteCategoryImage(c)
 	require.Equal(t, 200, w.Code)
 }
@@ -759,10 +653,7 @@ func TestDeleteCategory(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -872,7 +763,7 @@ func TestDeleteCategory(t *testing.T) {
 	itemUsecase.EXPECT().ItemsQuantityInCategory(ctx, testCategoryWithImage2.Name).Return(0, nil)
 	categoryUsecase.EXPECT().DeleteCategory(ctx, testId).Return(nil)
 	categoryUsecase.EXPECT().DeleteCategoryCache(ctx, testCategoryWithImage2.Name).Return(fmt.Errorf("error"))
-	categoryUsecase.EXPECT().DeleteCategoryImageById(context.Background(), testId.String()).Return(nil)
+	categoryUsecase.EXPECT().DeleteCategoryImageById(ctx, testId).Return(fmt.Errorf("error"))
 	delivery.DeleteCategory(c)
 	require.Equal(t, 200, w.Code)
 
@@ -896,7 +787,7 @@ func TestDeleteCategory(t *testing.T) {
 	itemUsecase.EXPECT().GetItemsByCategory(ctx, testCategoryWithImage2.Name, limitOptions, sortOptions).Return([]models.Item{*testModelsItemWithId}, nil)
 	categoryUsecase.EXPECT().DeleteCategory(ctx, testId).Return(nil)
 	categoryUsecase.EXPECT().DeleteCategoryCache(ctx, testCategoryWithImage2.Name).Return(nil)
-	categoryUsecase.EXPECT().DeleteCategoryImageById(context.Background(), testId.String()).Return(nil)
+	categoryUsecase.EXPECT().DeleteCategoryImageById(ctx, testId).Return(nil)
 	categoryUsecase.EXPECT().GetCategoryByName(ctx, "NoCategory").Return(&testNoCategoryWithId, nil)
 	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemNoCat).Return(fmt.Errorf("error"))
 	itemUsecase.EXPECT().UpdateItemsInCategoryCache(ctx, &testModelsItemNoCat, "create").Return(fmt.Errorf("error"))
@@ -938,13 +829,58 @@ func TestDeleteCategory(t *testing.T) {
 	itemUsecase.EXPECT().GetItemsByCategory(ctx, testCategoryWithImage2.Name, limitOptions, sortOptions).Return([]models.Item{*testModelsItemWithId}, nil)
 	categoryUsecase.EXPECT().DeleteCategory(ctx, testId).Return(nil)
 	categoryUsecase.EXPECT().DeleteCategoryCache(ctx, testCategoryWithImage2.Name).Return(fmt.Errorf("error"))
-	categoryUsecase.EXPECT().DeleteCategoryImageById(context.Background(), testId.String()).Return(nil)
+	categoryUsecase.EXPECT().DeleteCategoryImageById(ctx, testId).Return(nil)
 	categoryUsecase.EXPECT().GetCategoryByName(ctx, "NoCategory").Return(&models.Category{}, models.ErrorNotFound{})
 	categoryUsecase.EXPECT().CreateCategory(ctx, &testNoCategory).Return(testId, nil)
 	itemUsecase.EXPECT().UpdateItem(ctx, &testModelsItemNoCat).Return(fmt.Errorf("error"))
 	itemUsecase.EXPECT().UpdateItemsInCategoryCache(ctx, &testModelsItemNoCat, "create").Return(fmt.Errorf("error"))
 	delivery.DeleteCategory(c)
 	require.Equal(t, 200, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+	c.Params = []gin.Param{
+		{
+			Key:   "categoryID",
+			Value: testId.String(),
+		},
+	}
+	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(testCategoryWithImage2, nil)
+	itemUsecase.EXPECT().ItemsQuantityInCategory(ctx, testCategoryWithImage2.Name).Return(1, nil)
+	itemUsecase.EXPECT().GetItemsByCategory(ctx, testCategoryWithImage2.Name, limitOptions, sortOptions).Return([]models.Item{*testModelsItemWithId}, nil)
+	categoryUsecase.EXPECT().DeleteCategory(ctx, testId).Return(nil)
+	categoryUsecase.EXPECT().DeleteCategoryCache(ctx, testCategoryWithImage2.Name).Return(fmt.Errorf("error"))
+	categoryUsecase.EXPECT().DeleteCategoryImageById(ctx, testId).Return(nil)
+	categoryUsecase.EXPECT().GetCategoryByName(ctx, "NoCategory").Return(&models.Category{}, models.ErrorNotFound{})
+	categoryUsecase.EXPECT().CreateCategory(ctx, &testNoCategory).Return(uuid.Nil, fmt.Errorf("error"))
+	delivery.DeleteCategory(c)
+	require.Equal(t, 500, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+	c.Params = []gin.Param{
+		{
+			Key:   "categoryID",
+			Value: testId.String(),
+		},
+	}
+	categoryUsecase.EXPECT().GetCategory(ctx, testId).Return(testCategoryWithImage2, nil)
+	itemUsecase.EXPECT().ItemsQuantityInCategory(ctx, testCategoryWithImage2.Name).Return(1, nil)
+	itemUsecase.EXPECT().GetItemsByCategory(ctx, testCategoryWithImage2.Name, limitOptions, sortOptions).Return([]models.Item{*testModelsItemWithId}, nil)
+	categoryUsecase.EXPECT().DeleteCategory(ctx, testId).Return(nil)
+	categoryUsecase.EXPECT().DeleteCategoryCache(ctx, testCategoryWithImage2.Name).Return(fmt.Errorf("error"))
+	categoryUsecase.EXPECT().DeleteCategoryImageById(ctx, testId).Return(nil)
+	categoryUsecase.EXPECT().GetCategoryByName(ctx, "NoCategory").Return(&models.Category{}, fmt.Errorf("error"))
+	delivery.DeleteCategory(c)
+	require.Equal(t, 500, w.Code)
 }
 
 func TestDeleteCategory2(t *testing.T) {
@@ -954,10 +890,7 @@ func TestDeleteCategory2(t *testing.T) {
 	logger := zap.L()
 	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
 	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
-
-	cartUsecase := mocks.NewMockICartUsecase(ctrl)
-	orderUsecase := mocks.NewMockIOrderUsecase(ctrl)
-	delivery := NewDelivery(itemUsecase, nil, categoryUsecase, cartUsecase, logger, orderUsecase)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
