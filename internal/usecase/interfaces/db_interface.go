@@ -35,7 +35,7 @@ type CategoryStore interface {
 }
 
 type UserStore interface {
-	Create(ctx context.Context, user *models.User) (*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetRightsId(ctx context.Context, name string) (models.Rights, error)
 	UpdateUserData(ctx context.Context, id uuid.UUID, user *models.User) (*models.User, error)
@@ -43,12 +43,10 @@ type UserStore interface {
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
 	GetRightsList(ctx context.Context) (chan models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
-	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
-	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 }
 
 type CartStore interface {
-	Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 	AddItemToCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
 	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 	DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
@@ -57,12 +55,10 @@ type CartStore interface {
 }
 
 type OrderStore interface {
-	Create(ctx context.Context, order *models.Order) (*models.Order, error)
+	CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error)
 	DeleteOrder(ctx context.Context, order *models.Order) error
 	ChangeAddress(ctx context.Context, order *models.Order, address models.UserAddress) error
 	ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error
 	GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error)
 	GetOrdersForUser(ctx context.Context, user *models.User) (chan models.Order, error)
-	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
-	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 }

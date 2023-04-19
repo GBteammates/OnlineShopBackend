@@ -2,19 +2,23 @@ package main
 
 import (
 	"OnlineShopBackend/config"
-	"OnlineShopBackend/internal/delivery"
+	carts "OnlineShopBackend/internal/delivery/carts"
+	categories "OnlineShopBackend/internal/delivery/categories"
+	items "OnlineShopBackend/internal/delivery/items"
+	orders "OnlineShopBackend/internal/delivery/orders"
 	"OnlineShopBackend/internal/delivery/router"
-	"OnlineShopBackend/internal/delivery/user/password"
+	users "OnlineShopBackend/internal/delivery/users"
+	"OnlineShopBackend/internal/delivery/users/user/password"
 	"OnlineShopBackend/internal/models"
 	redisCache "OnlineShopBackend/internal/repository/cache/redis"
 	"OnlineShopBackend/internal/repository/db/postgres"
 	"OnlineShopBackend/internal/repository/filestorage"
-	"OnlineShopBackend/internal/usecase/cart_usecase"
-	"OnlineShopBackend/internal/usecase/category_usecase"
+	cartUsecase "OnlineShopBackend/internal/usecase/carts"
+	categoryUsecase "OnlineShopBackend/internal/usecase/categories"
 	usecase "OnlineShopBackend/internal/usecase/interfaces"
-	"OnlineShopBackend/internal/usecase/item_usecase"
-	"OnlineShopBackend/internal/usecase/order_usecase"
-	"OnlineShopBackend/internal/usecase/user_usecase"
+	itemUsecase "OnlineShopBackend/internal/usecase/items"
+	orderUsecase "OnlineShopBackend/internal/usecase/orders"
+	userUsecase "OnlineShopBackend/internal/usecase/users"
 	"OnlineShopBackend/logger"
 	"OnlineShopBackend/server"
 	"context"
@@ -66,18 +70,19 @@ func main() {
 
 	filestorage := filestorage.NewFileStorage(cfg.ServerURL, cfg.FsPath, l)
 
-	itemUsecase := item_usecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
-	categoryUsecase := category_usecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
-	userUsecase := user_usecase.NewUserUsecase(userStore, l)
-	cartUsecase := cart_usecase.NewCartUseCase(cartStore, l)
-	orderUsecase := order_usecase.NewOrderUsecase(orderStore, lsug)
+	itemUsecase := itemUsecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
+	categoryUsecase := categoryUsecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
+	userUsecase := userUsecase.NewUserUsecase(userStore, l)
+	cartUsecase := cartUsecase.NewCartUsecase(cartStore, l)
+	orderUsecase := orderUsecase.NewOrderUsecase(orderStore, lsug)
 
-	itemDelivery := delivery.NewItemDelivery(itemUsecase, categoryUsecase, lsug)
-	cartDelivery := delivery.NewCartDelivery(cartUsecase, lsug)
-	orderDelivery := delivery.NewOrderDelivery(orderUsecase, lsug)
-	userDelivery := delivery.NewUserDelivery(userUsecase, lsug)
+	itemDelivery := items.NewItemDelivery(itemUsecase, categoryUsecase, lsug)
+	categoryDelivery := categories.NewCategoryDelivery(categoryUsecase, itemUsecase, lsug)
+	cartDelivery := carts.NewCartDelivery(cartUsecase, lsug)
+	orderDelivery := orders.NewOrderDelivery(orderUsecase, cartUsecase, lsug)
+	userDelivery := users.NewUserDelivery(userUsecase, cartUsecase, lsug)
 
-	router := router.NewRouter(itemDelivery, cartDelivery, orderDelivery, userDelivery, l)
+	router := router.NewRouter(itemDelivery, categoryDelivery, cartDelivery, orderDelivery, userDelivery, l)
 	serverOptions := map[string]int{
 		"ReadTimeout":       cfg.ReadTimeout,
 		"WriteTimeout":      cfg.WriteTimeout,
@@ -208,12 +213,12 @@ func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap
 	hash := password.GeneratePasswordHash(newAdmin.Password)
 	newAdmin.Password = hash
 
-	admin, err := userStore.Create(ctx, newAdmin)
+	adminId, err := userStore.CreateUser(ctx, newAdmin)
 	if err != nil {
 		logger.Error(err.Error())
 		return
 	}
-	if admin != nil {
+	if adminId != uuid.Nil {
 		logger.Info("Set Admin success")
 	} else {
 		logger.Warn("Set Admin fail")

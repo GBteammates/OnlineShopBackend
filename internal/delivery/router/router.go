@@ -1,8 +1,12 @@
 package router
 
 import (
-	"OnlineShopBackend/internal/delivery"
+	carts "OnlineShopBackend/internal/delivery/carts"
+	categories "OnlineShopBackend/internal/delivery/categories"
+	items "OnlineShopBackend/internal/delivery/items"
+	orders "OnlineShopBackend/internal/delivery/orders"
 	"OnlineShopBackend/internal/delivery/swagger/docs"
+	users "OnlineShopBackend/internal/delivery/users"
 	"net/http"
 
 	ginzap "github.com/gin-contrib/zap"
@@ -31,18 +35,20 @@ type Routes []Route
 
 type Router struct {
 	*gin.Engine
-	itemDelivery  *delivery.ItemDelivery
-	cartDelivery  *delivery.CartDelivery
-	orderDelivery *delivery.OrderDelivery
-	userDelivery  *delivery.UserDelivery
-	logger        *zap.Logger
+	itemDelivery     *items.ItemDelivery
+	categoryDelivery *categories.CategoryDelivery
+	cartDelivery     *carts.CartDelivery
+	orderDelivery    *orders.OrderDelivery
+	userDelivery     *users.UserDelivery
+	logger           *zap.Logger
 }
 
 // NewRouter returns a new router.
-func NewRouter(itemDelivery *delivery.ItemDelivery,
-	cartDelivery *delivery.CartDelivery,
-	orderDelivery *delivery.OrderDelivery,
-	userDelivery *delivery.UserDelivery,
+func NewRouter(itemDelivery *items.ItemDelivery,
+	categoryDelivery *categories.CategoryDelivery,
+	cartDelivery *carts.CartDelivery,
+	orderDelivery *orders.OrderDelivery,
+	userDelivery *users.UserDelivery,
 	logger *zap.Logger) *Router {
 
 	logger.Debug("Enter in NewRouter()")
@@ -54,6 +60,7 @@ func NewRouter(itemDelivery *delivery.ItemDelivery,
 	gin.Group("/docs").Any("/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	router := &Router{
 		itemDelivery:  itemDelivery,
+		categoryDelivery: categoryDelivery,
 		cartDelivery:  cartDelivery,
 		orderDelivery: orderDelivery,
 		userDelivery:  userDelivery,
@@ -67,56 +74,56 @@ func NewRouter(itemDelivery *delivery.ItemDelivery,
 			http.MethodPost,
 			"/categories/create",
 			AdminAuth(),
-			itemDelivery.CreateCategory,
+			categoryDelivery.CreateCategory,
 		},
 		{
 			"GetCategory",
 			http.MethodGet,
 			"/categories/:categoryID",
 			noOpMiddleware,
-			itemDelivery.GetCategory,
+			categoryDelivery.GetCategory,
 		},
 		{
 			"GetCategoryList",
 			http.MethodGet,
 			"/categories/list",
 			noOpMiddleware,
-			itemDelivery.GetCategoryList,
+			categoryDelivery.GetCategoryList,
 		},
 		{
 			"UpdateCategory",
 			http.MethodPut,
 			"/categories/:categoryID",
 			AdminAuth(),
-			itemDelivery.UpdateCategory,
+			categoryDelivery.UpdateCategory,
 		},
 		{
 			"UploadCategoryImage",
 			http.MethodPost,
 			"/categories/image/upload/:categoryID",
 			AdminAuth(),
-			itemDelivery.UploadCategoryImage,
+			categoryDelivery.UploadCategoryImage,
 		},
 		{
 			"DeleteCategoryImage",
 			http.MethodDelete,
 			"/categories/image/delete", //?id=25f32441-587a-452d-af8c-b3876ae29d45&name=20221209194557.jpeg
 			AdminAuth(),
-			itemDelivery.DeleteCategoryImage,
+			categoryDelivery.DeleteCategoryImage,
 		},
 		{
 			"DeleteCategory",
 			http.MethodDelete,
 			"/categories/delete/:categoryID",
 			AdminAuth(),
-			itemDelivery.DeleteCategory,
+			categoryDelivery.DeleteCategory,
 		},
 		{
 			"GetCategoriesImagesList",
 			http.MethodGet,
 			"/categories/images/list",
 			AdminAuth(),
-			itemDelivery.GetCategoriesImagesList,
+			categoryDelivery.GetCategoriesImagesList,
 		},
 		// -------------------------ITEM--------------------------------------------------------------------------------
 		{

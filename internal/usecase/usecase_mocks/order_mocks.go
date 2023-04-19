@@ -103,11 +103,3 @@ func (o *OrderUsecaseMock) GetOrder(ctx context.Context, id uuid.UUID) (*models.
 		},
 	}, o.Err
 }
-
-func (o *OrderUsecaseMock) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
-	return uuid.Nil, nil
-}
-
-func (o *OrderUsecaseMock) DeleteCart(ctx context.Context, id uuid.UUID) error {
-	return nil
-}

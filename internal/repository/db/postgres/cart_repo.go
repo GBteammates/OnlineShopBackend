@@ -27,7 +27,7 @@ func NewCartStore(storage *PGres, logger *zap.SugaredLogger) usecase.CartStore {
 }
 
 // Create Shall we add items at the moment we create cart
-func (c *cart) Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+func (c *cart) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
 	c.logger.Debugf("Enter in repository cart Create() with args: ctx, userId: %v", userId)
 	select {
 	case <-ctx.Done():

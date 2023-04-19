@@ -1,7 +1,7 @@
 package usecase
 
 import (
-	"OnlineShopBackend/internal/delivery/user"
+	"OnlineShopBackend/internal/delivery/users/user"
 	"OnlineShopBackend/internal/models"
 	"context"
 
@@ -57,26 +57,22 @@ type IOrderUsecase interface {
 	DeleteOrder(ctx context.Context, order *models.Order) error
 	ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error
 	GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error)
-	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
-	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 }
 type ICartUsecase interface {
 	GetCart(ctx context.Context, cartId uuid.UUID) (*models.Cart, error)
 	DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
-	Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
+	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 	AddItemToCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
 	DeleteCart(ctx context.Context, cartId uuid.UUID) error
 	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
 }
 
 type IUserUsecase interface {
-	CreateUser(ctx context.Context, user *user.CreateUserData) (*models.User, error)
+	CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetRightsId(ctx context.Context, name string) (*models.Rights, error)
 	UpdateUserData(ctx context.Context, id uuid.UUID, user *user.CreateUserData) (*models.User, error)
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
 	GetRightsList(ctx context.Context) ([]models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
-	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
-	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
 }

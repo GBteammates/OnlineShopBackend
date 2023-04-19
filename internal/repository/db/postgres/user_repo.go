@@ -2,10 +2,9 @@ package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase/interfaces"
+	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
@@ -26,10 +25,10 @@ func NewUser(storage *PGres, logger *zap.SugaredLogger) usecase.UserStore {
 	}
 }
 
-func (u *user) Create(ctx context.Context, user *models.User) (*models.User, error) {
+func (u *user) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
 	select {
 	case <-ctx.Done():
-		return nil, fmt.Errorf("context is closed")
+		return uuid.Nil, fmt.Errorf("context is closed")
 	default:
 		pool := u.storage.GetPool()
 		// we create rights and address somewhere in usecase or get them from user
@@ -41,10 +40,9 @@ func (u *user) Create(ctx context.Context, user *models.User) (*models.User, err
 		var id uuid.UUID
 		err := row.Scan(&id)
 		if err != nil {
-			return nil, fmt.Errorf("can't create user: %w", err)
+			return uuid.Nil, fmt.Errorf("can't create user: %w", err)
 		}
-		user.ID = id
-		return user, nil
+		return id, nil
 	}
 }
 
@@ -251,91 +249,4 @@ func (u *user) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UU
 	u.logger.Info("Rights create success")
 	u.logger.Debugf("id is %v\n", id)
 	return id, nil
-}
-
-func (u *user) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
-	u.logger.Debug("Enter in repository cart GetCartByUserId() with args: ctx, userId: %v", userId)
-	select {
-	case <-ctx.Done():
-		return nil, fmt.Errorf("context closed")
-	default:
-		pool := u.storage.GetPool()
-		var cartId uuid.UUID
-		row := pool.QueryRow(ctx, `SELECT id FROM carts WHERE user_id = $1`, userId)
-		err := row.Scan(&cartId)
-		if err != nil && strings.Contains(err.Error(), "no rows in result set") {
-			u.logger.Error(err.Error())
-			return nil, models.ErrorNotFound{}
-		}
-		if err != nil {
-			u.logger.Error(err)
-			return nil, fmt.Errorf("can't read cart id: %w", err)
-		}
-		u.logger.Debug("read cart id success: %v", userId)
-		item := models.ItemWithQuantity{}
-		rows, err := pool.Query(ctx, `
-		SELECT i.id, i.name, i.description, i.category, cat.name, cat.description, cat.picture, i.price, i.vendor, i.pictures, c.item_quantity
-		FROM cart_items c, items i, categories cat
-		WHERE c.cart_id=$1 and i.id = c.item_id and cat.id = i.category`, cartId)
-		if err != nil {
-			u.logger.Errorf("can't select items from cart: %s", err)
-			return nil, fmt.Errorf("can't select items from cart: %w", err)
-		}
-		defer rows.Close()
-		u.logger.Debug("read info from db in pool.Query success")
-		items := make([]models.ItemWithQuantity, 0, 100)
-		for rows.Next() {
-			err := rows.Scan(
-				&item.Id,
-				&item.Title,
-				&item.Description,
-				&item.Category.Id,
-				&item.Category.Name,
-				&item.Category.Description,
-				&item.Category.Image,
-				&item.Price,
-				&item.Vendor,
-				&item.Images,
-				&item.Quantity,
-			)
-			if err != nil && strings.Contains(err.Error(), "no rows in result set") {
-				u.logger.Error(err.Error())
-				return nil, models.ErrorNotFound{}
-			}
-			if err != nil {
-				u.logger.Error(err.Error())
-				return nil, err
-			}
-
-			items = append(items, item)
-		}
-		u.logger.Info("Select items from cart success")
-		u.logger.Info("Get cart success")
-		return &models.Cart{
-			Id:     cartId,
-			UserId: userId,
-			Items:  items,
-		}, nil
-	}
-}
-
-// Create Shall we add items at the moment we create cart
-func (u *user) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
-	u.logger.Debugf("Enter in repository cart Create() with args: ctx, userId: %v", userId)
-	select {
-	case <-ctx.Done():
-		return uuid.Nil, fmt.Errorf("context closed")
-	default:
-		pool := u.storage.GetPool()
-		var cartId uuid.UUID
-		row := pool.QueryRow(ctx, `INSERT INTO carts (user_id) VALUES ($1) RETURNING id`,
-			userId)
-		err := row.Scan(&cartId)
-		if err != nil {
-			u.logger.Error(err)
-			return uuid.Nil, fmt.Errorf("can't create cart object: %w", err)
-		}
-		u.logger.Info("Create cart success")
-		return cartId, nil
-	}
 }

@@ -1,7 +1,7 @@
 package router
 
 import (
-	"OnlineShopBackend/internal/delivery/user/jwtauth"
+	"OnlineShopBackend/internal/delivery/users/user/jwtauth"
 	"net/http"
 	"strings"
 

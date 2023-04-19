@@ -391,36 +391,6 @@ func (m *MockUserStore) EXPECT() *MockUserStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method.
-func (m *MockUserStore) Create(ctx context.Context, user *models.User) (*models.User, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, user)
-	ret0, _ := ret[0].(*models.User)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Create indicates an expected call of Create.
-func (mr *MockUserStoreMockRecorder) Create(ctx, user interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockUserStore)(nil).Create), ctx, user)
-}
-
-// CreateCart mocks base method.
-func (m *MockUserStore) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateCart", ctx, userId)
-	ret0, _ := ret[0].(uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateCart indicates an expected call of CreateCart.
-func (mr *MockUserStoreMockRecorder) CreateCart(ctx, userId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCart", reflect.TypeOf((*MockUserStore)(nil).CreateCart), ctx, userId)
-}
-
 // CreateRights mocks base method.
 func (m *MockUserStore) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -436,19 +406,19 @@ func (mr *MockUserStoreMockRecorder) CreateRights(ctx, rights interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRights", reflect.TypeOf((*MockUserStore)(nil).CreateRights), ctx, rights)
 }
 
-// GetCartByUserId mocks base method.
-func (m *MockUserStore) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
+// CreateUser mocks base method.
+func (m *MockUserStore) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCartByUserId", ctx, userId)
-	ret0, _ := ret[0].(*models.Cart)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, user)
+	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCartByUserId indicates an expected call of GetCartByUserId.
-func (mr *MockUserStoreMockRecorder) GetCartByUserId(ctx, userId interface{}) *gomock.Call {
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockUserStoreMockRecorder) CreateUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCartByUserId", reflect.TypeOf((*MockUserStore)(nil).GetCartByUserId), ctx, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockUserStore)(nil).CreateUser), ctx, user)
 }
 
 // GetRightsId mocks base method.
@@ -576,19 +546,19 @@ func (mr *MockCartStoreMockRecorder) AddItemToCart(ctx, cartId, itemId interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddItemToCart", reflect.TypeOf((*MockCartStore)(nil).AddItemToCart), ctx, cartId, itemId)
 }
 
-// Create mocks base method.
-func (m *MockCartStore) Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+// CreateCart mocks base method.
+func (m *MockCartStore) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, userId)
+	ret := m.ctrl.Call(m, "CreateCart", ctx, userId)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create.
-func (mr *MockCartStoreMockRecorder) Create(ctx, userId interface{}) *gomock.Call {
+// CreateCart indicates an expected call of CreateCart.
+func (mr *MockCartStoreMockRecorder) CreateCart(ctx, userId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockCartStore)(nil).Create), ctx, userId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCart", reflect.TypeOf((*MockCartStore)(nil).CreateCart), ctx, userId)
 }
 
 // DeleteCart mocks base method.
@@ -700,48 +670,19 @@ func (mr *MockOrderStoreMockRecorder) ChangeStatus(ctx, order, status interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockOrderStore)(nil).ChangeStatus), ctx, order, status)
 }
 
-// Create mocks base method.
-func (m *MockOrderStore) Create(ctx context.Context, order *models.Order) (*models.Order, error) {
+// CreateOrder mocks base method.
+func (m *MockOrderStore) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", ctx, order)
+	ret := m.ctrl.Call(m, "CreateOrder", ctx, order)
 	ret0, _ := ret[0].(*models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create.
-func (mr *MockOrderStoreMockRecorder) Create(ctx, order interface{}) *gomock.Call {
+// CreateOrder indicates an expected call of CreateOrder.
+func (mr *MockOrderStoreMockRecorder) CreateOrder(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockOrderStore)(nil).Create), ctx, order)
-}
-
-// CreateCart mocks base method.
-func (m *MockOrderStore) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateCart", ctx, userId)
-	ret0, _ := ret[0].(uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateCart indicates an expected call of CreateCart.
-func (mr *MockOrderStoreMockRecorder) CreateCart(ctx, userId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCart", reflect.TypeOf((*MockOrderStore)(nil).CreateCart), ctx, userId)
-}
-
-// DeleteCart mocks base method.
-func (m *MockOrderStore) DeleteCart(ctx context.Context, cartId uuid.UUID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCart", ctx, cartId)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteCart indicates an expected call of DeleteCart.
-func (mr *MockOrderStoreMockRecorder) DeleteCart(ctx, cartId interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCart", reflect.TypeOf((*MockOrderStore)(nil).DeleteCart), ctx, cartId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockOrderStore)(nil).CreateOrder), ctx, order)
 }
 
 // DeleteOrder mocks base method.
