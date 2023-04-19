@@ -14,7 +14,7 @@ const (
 )
 
 type Rights struct {
-	ID    uuid.UUID `json:"id"`
+	Id    uuid.UUID `json:"id"`
 	Name  string    `json:"name"`
 	Rules []string  `json:"rules"`
 }

@@ -38,11 +38,11 @@ func NewRedisCache(host, port string, ttl time.Duration, logger *zap.Logger) (*R
 }
 
 // ShutDown is func for graceful shutdown redis connection
-func (cache *RedisCache) ShutDown(timeout int) error {
+func (cache *RedisCache) Shutdown(timeout int) error {
 	cache.logger.Sugar().Debugf("Enter in cache ShutDown() with args: timeout: %d", timeout)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()
-	status := cache.Shutdown(ctx)
+	status := cache.Client.Shutdown(ctx)
 	result, err := status.Result()
 	if err != nil {
 		return err

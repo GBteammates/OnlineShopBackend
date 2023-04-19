@@ -21,7 +21,7 @@ const (
 )
 
 type Order struct {
-	ID           uuid.UUID
+	Id           uuid.UUID
 	CreatedAt    time.Time
 	ShipmentTime time.Time
 	User         User

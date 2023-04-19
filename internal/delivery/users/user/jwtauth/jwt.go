@@ -49,7 +49,7 @@ func CreateSessionJWT(ctx context.Context, user *models.User) (Token, error) {
 	payload := Payload{
 		Email:  user.Email,
 		Role:   user.Rights.Name,
-		UserId: user.ID,
+		UserId: user.Id,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 		},

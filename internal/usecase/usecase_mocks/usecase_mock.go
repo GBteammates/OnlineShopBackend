@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	user "OnlineShopBackend/internal/delivery/users/user"
 	models "OnlineShopBackend/internal/models"
 	context "context"
 	reflect "reflect"
@@ -655,19 +654,19 @@ func (mr *MockIOrderUsecaseMockRecorder) GetOrder(ctx, id interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrder", reflect.TypeOf((*MockIOrderUsecase)(nil).GetOrder), ctx, id)
 }
 
-// GetOrdersForUser mocks base method.
-func (m *MockIOrderUsecase) GetOrdersForUser(ctx context.Context, user *models.User) ([]models.Order, error) {
+// GetOrdersByUser mocks base method.
+func (m *MockIOrderUsecase) GetOrdersByUser(ctx context.Context, user *models.User) ([]models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrdersForUser", ctx, user)
+	ret := m.ctrl.Call(m, "GetOrdersByUser", ctx, user)
 	ret0, _ := ret[0].([]models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrdersForUser indicates an expected call of GetOrdersForUser.
-func (mr *MockIOrderUsecaseMockRecorder) GetOrdersForUser(ctx, user interface{}) *gomock.Call {
+// GetOrdersByUser indicates an expected call of GetOrdersByUser.
+func (mr *MockIOrderUsecaseMockRecorder) GetOrdersByUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersForUser", reflect.TypeOf((*MockIOrderUsecase)(nil).GetOrdersForUser), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByUser", reflect.TypeOf((*MockIOrderUsecase)(nil).GetOrdersByUser), ctx, user)
 }
 
 // PlaceOrder mocks base method.
@@ -894,18 +893,18 @@ func (mr *MockIUserUsecaseMockRecorder) GetUserByEmail(ctx, email interface{}) *
 }
 
 // UpdateUserData mocks base method.
-func (m *MockIUserUsecase) UpdateUserData(ctx context.Context, id uuid.UUID, user *user.CreateUserData) (*models.User, error) {
+func (m *MockIUserUsecase) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserData", ctx, id, user)
+	ret := m.ctrl.Call(m, "UpdateUserData", ctx, user)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateUserData indicates an expected call of UpdateUserData.
-func (mr *MockIUserUsecaseMockRecorder) UpdateUserData(ctx, id, user interface{}) *gomock.Call {
+func (mr *MockIUserUsecaseMockRecorder) UpdateUserData(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserData", reflect.TypeOf((*MockIUserUsecase)(nil).UpdateUserData), ctx, id, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserData", reflect.TypeOf((*MockIUserUsecase)(nil).UpdateUserData), ctx, user)
 }
 
 // UpdateUserRole mocks base method.

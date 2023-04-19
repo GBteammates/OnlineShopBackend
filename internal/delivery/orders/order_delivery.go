@@ -60,7 +60,7 @@ func (delivery *OrderDelivery) CreateOrder(c *gin.Context) {
 		return
 	}
 	user := models.User{
-		ID:    id,
+		Id:    id,
 		Email: cart.User.Email,
 	}
 	id, err = uuid.Parse(cart.Cart.Id)
@@ -71,7 +71,7 @@ func (delivery *OrderDelivery) CreateOrder(c *gin.Context) {
 	}
 	cartModel := models.Cart{
 		Id:     id,
-		UserId: user.ID,
+		UserId: user.Id,
 		Items:  make([]models.ItemWithQuantity, 0, len(cart.Cart.Items)),
 	}
 	for _, oitem := range cart.Cart.Items {
@@ -111,15 +111,15 @@ func (delivery *OrderDelivery) CreateOrder(c *gin.Context) {
 	} else {
 		delivery.logger.Infof("Cart with id: %v delete success", cartModel.Id)
 	}
-	newCartId, err := delivery.cartUsecase.CreateCart(ctx, user.ID)
+	newCartId, err := delivery.cartUsecase.CreateCart(ctx, user.Id)
 	if err != nil {
-		delivery.logger.Warnf("error when creating new cart for user with id: %v, err: %v", user.ID, err)
+		delivery.logger.Warnf("error when creating new cart for user with id: %v, err: %v", user.Id, err)
 	} else {
-		delivery.logger.Infof("New cart with id: %v for user with id: %v create success", newCartId, user.ID)
+		delivery.logger.Infof("New cart with id: %v for user with id: %v create success", newCartId, user.Id)
 	}
 
 	c.JSON(http.StatusCreated, order.OrderId{
-		Id:        ordr.ID.String(),
+		Id:        ordr.Id.String(),
 		NewCartId: newCartId.String(),
 	})
 }
@@ -154,8 +154,8 @@ func (delivery *OrderDelivery) GetOrder(c *gin.Context) {
 		return
 	}
 	order := order.Order{
-		Id:           modelOrder.ID.String(),
-		UserId:       modelOrder.User.ID.String(),
+		Id:           modelOrder.Id.String(),
+		UserId:       modelOrder.User.Id.String(),
 		CreatedAt:    modelOrder.CreatedAt,
 		ShipmentTime: modelOrder.ShipmentTime,
 		Address:      order.OrderAddress(modelOrder.Address),
@@ -209,7 +209,7 @@ func (delivery *OrderDelivery) GetOrdersForUser(c *gin.Context) {
 		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
-	modelOrders, err := delivery.orderUsecase.GetOrdersForUser(ctx, &models.User{ID: userId})
+	modelOrders, err := delivery.orderUsecase.GetOrdersByUser(ctx, &models.User{Id: userId})
 	if err != nil {
 		delivery.logger.Errorf("can't get order: %s", err)
 		helper.SetError(c, http.StatusInternalServerError, err)
@@ -218,8 +218,8 @@ func (delivery *OrderDelivery) GetOrdersForUser(c *gin.Context) {
 	orders := make([]order.Order, 0, len(modelOrders))
 	for _, modelOrder := range modelOrders {
 		order := order.Order{
-			Id:           modelOrder.ID.String(),
-			UserId:       modelOrder.User.ID.String(),
+			Id:           modelOrder.Id.String(),
+			UserId:       modelOrder.User.Id.String(),
 			CreatedAt:    modelOrder.CreatedAt,
 			ShipmentTime: modelOrder.ShipmentTime,
 			Address:      order.OrderAddress(modelOrder.Address),
@@ -278,7 +278,7 @@ func (delivery *OrderDelivery) DeleteOrder(c *gin.Context) {
 		return
 	}
 
-	err = delivery.orderUsecase.DeleteOrder(ctx, &models.Order{ID: orderId})
+	err = delivery.orderUsecase.DeleteOrder(ctx, &models.Order{Id: orderId})
 	if err != nil {
 		delivery.logger.Errorf("Can't delete order with orderID %s", err)
 		helper.SetError(c, http.StatusInternalServerError, err)
@@ -329,8 +329,8 @@ func (delivery *OrderDelivery) ChangeAddress(c *gin.Context) {
 	}
 	err = delivery.orderUsecase.ChangeAddress(ctx,
 		&models.Order{
-			ID:   orderID,
-			User: models.User{ID: userID},
+			Id:   orderID,
+			User: models.User{Id: userID},
 		}, models.UserAddress(address.Address))
 	if err != nil {
 		delivery.logger.Errorf("can't change address for order with id: %s %s", orderID, err)
@@ -380,9 +380,9 @@ func (delivery *OrderDelivery) ChangeStatus(c *gin.Context) {
 		return
 	}
 	err = delivery.orderUsecase.ChangeStatus(ctx, &models.Order{
-		ID: orderID,
+		Id: orderID,
 		User: models.User{
-			ID: userID,
+			Id: userID,
 		},
 	}, models.Status(status.Status))
 	if err != nil {

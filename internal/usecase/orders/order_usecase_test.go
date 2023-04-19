@@ -75,7 +75,7 @@ type orderRepoMock struct {
 var _ usecase.OrderStore = (*orderRepoMock)(nil)
 
 func (orMock *orderRepoMock) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
-	order.ID, _ = uuid.NewRandom()
+	order.Id, _ = uuid.NewRandom()
 	return order, orMock.err
 }
 func (orMock *orderRepoMock) DeleteOrder(ctx context.Context, order *models.Order) error {
@@ -98,19 +98,19 @@ func (orMock *orderRepoMock) DeleteCart(ctx context.Context, id uuid.UUID) error
 	return nil
 }
 
-func (orMock *orderRepoMock) GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error) {
+func (orMock *orderRepoMock) GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error) {
 	userID, _ := uuid.NewRandom()
 	itemID1, _ := uuid.NewRandom()
 	itemID2, _ := uuid.NewRandom()
 	order := testOrder
-	order.ID = id
-	order.User.ID = userID
+	order.Id = id
+	order.User.Id = userID
 	order.Items[0].Id = itemID1
 	order.Items[1].Id = itemID2
 	return order, orMock.err
 }
 
-func (orMock *orderRepoMock) GetOrdersForUser(ctx context.Context, user *models.User) (chan models.Order, error) {
+func (orMock *orderRepoMock) GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error) {
 	res := make(chan models.Order, 1)
 	return res, orMock.err
 }

@@ -41,7 +41,7 @@ func (server *Server) Start() {
 }
 
 // ShutDown stop the server
-func (server *Server) ShutDown(timeout int) error {
+func (server *Server) Shutdown(timeout int) error {
 	server.logger.Debug("Enter in server ShutDown()")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()

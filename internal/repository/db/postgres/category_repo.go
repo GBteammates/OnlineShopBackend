@@ -20,7 +20,7 @@ type categoryRepo struct {
 
 var _ usecase.CategoryStore = (*categoryRepo)(nil)
 
-func NewCategoryRepo(store *PGres, log *zap.SugaredLogger) usecase.CategoryStore {
+func NewCategoryRepo(store *PGres, log *zap.SugaredLogger) *categoryRepo {
 	return &categoryRepo{
 		storage: store,
 		logger:  log,

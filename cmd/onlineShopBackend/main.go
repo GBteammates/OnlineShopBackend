@@ -107,21 +107,21 @@ func main() {
 	}()
 	<-ctx.Done()
 
-	err = pgstore.ShutDown(cfg.Timeout)
+	err = pgstore.Shutdown(cfg.Timeout)
 	if err != nil {
 		l.Error(err.Error())
 	} else {
 		l.Info("Database connection stopped sucessful")
 	}
 
-	err = redis.ShutDown(cfg.Timeout)
+	err = redis.Shutdown(cfg.Timeout)
 	if err != nil {
 		l.Error(err.Error())
 	} else {
 		l.Info("Cash connection stopped successful")
 	}
 
-	err = server.ShutDown(cfg.Timeout)
+	err = server.Shutdown(cfg.Timeout)
 	if err != nil {
 		l.Error(err.Error())
 	} else {
@@ -176,7 +176,7 @@ func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap
 	if err != nil {
 		logger.Error(err.Error())
 	}
-	if exist.ID != uuid.Nil {
+	if exist.Id != uuid.Nil {
 		logger.Info("User admin is already exists")
 		return
 	}
@@ -188,7 +188,7 @@ func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap
 		logger.Error(err.Error())
 	}
 	logger.Sugar().Debugf("ExistAdminRights: %v", existAdminRights)
-	if existAdminRights.ID == uuid.Nil {
+	if existAdminRights.Id == uuid.Nil {
 		adminRights.Name = "Admin"
 		adminRights.Rules = []string{"Admin"}
 
@@ -197,7 +197,7 @@ func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap
 			logger.Error(err.Error())
 			return
 		}
-		adminRights.ID = rightsId
+		adminRights.Id = rightsId
 	} else {
 		logger.Info("rights admin is already exists")
 	}
@@ -207,7 +207,7 @@ func setAdmin(userStore usecase.UserStore, mail string, pass string, logger *zap
 		Email:     mail,
 		Password:  pass,
 		Rights: models.Rights{
-			ID: adminRights.ID,
+			Id: adminRights.Id,
 		},
 	}
 	hash := password.GeneratePasswordHash(newAdmin.Password)
@@ -233,7 +233,7 @@ func setCustomerRights(userStore usecase.UserStore, logger *zap.Logger) {
 	if err != nil {
 		logger.Error(err.Error())
 	}
-	if existRights.ID != uuid.Nil {
+	if existRights.Id != uuid.Nil {
 		logger.Sugar().Debugf("ExistCustomerRights: %v", existRights)
 		return
 	}

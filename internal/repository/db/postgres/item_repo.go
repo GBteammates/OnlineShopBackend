@@ -20,7 +20,7 @@ type itemRepo struct {
 	logger  *zap.SugaredLogger
 }
 
-func NewItemRepo(storage *PGres, logger *zap.SugaredLogger) usecase.ItemStore {
+func NewItemRepo(storage *PGres, logger *zap.SugaredLogger) *itemRepo {
 	logger.Debug("Enter in repository NewItemRepo()")
 	return &itemRepo{
 		storage: storage,

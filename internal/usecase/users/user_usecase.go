@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"OnlineShopBackend/internal/delivery/users/user"
 	"OnlineShopBackend/internal/models"
 	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
@@ -22,27 +21,6 @@ func NewUserUsecase(userStore usecase.UserStore, logger *zap.Logger) usecase.IUs
 	return &UserUsecase{userStore: userStore, logger: logger}
 }
 
-type Profile struct {
-	Email     string  `json:"email,omitempty"`
-	FirstName string  `json:"firstname,omitempty"`
-	LastName  string  `json:"lastname,omitempty"`
-	Address   Address `json:"address,omitempty"`
-	Rights    Rights  `json:"rights,omitempty"`
-}
-
-type Address struct {
-	Zipcode string `json:"zipcode,omitempty"`
-	Country string `json:"country,omitempty"`
-	City    string `json:"city,omitempty"`
-	Street  string `json:"street,omitempty"`
-}
-
-type Rights struct {
-	ID    uuid.UUID `json:"id,omitempty"`
-	Name  string    `json:"name,omitempty"`
-	Rules []string  `json:"rules,omitempty"`
-}
-
 func (usecase *UserUsecase) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
 	usecase.logger.Debug("Enter in usecase CreateUser()")
 
@@ -54,18 +32,18 @@ func (usecase *UserUsecase) CreateUser(ctx context.Context, user *models.User) (
 }
 
 func (usecase *UserUsecase) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	var user *models.User
+	usecase.logger.Sugar().Debugf("Enter in usecase GetUserByEmail() with args: ctx, email: %s", email)
 
 	user, err := usecase.userStore.GetUserByEmail(ctx, email)
 	if err != nil {
-		return &models.User{}, err
+		return nil, err
 	}
 
 	return user, nil
 }
 
 func (usecase *UserUsecase) GetRightsId(ctx context.Context, name string) (*models.Rights, error) {
-	//var rights models.Rights
+	usecase.logger.Sugar().Debugf("Enter in usecase GetRightsId() with args: ctx, name: %s", name)
 
 	rights, err := usecase.userStore.GetRightsId(ctx, name)
 	if err != nil {
@@ -75,18 +53,10 @@ func (usecase *UserUsecase) GetRightsId(ctx context.Context, name string) (*mode
 	return &rights, nil
 }
 
-func (usecase *UserUsecase) UpdateUserData(ctx context.Context, id uuid.UUID, user *user.CreateUserData) (*models.User, error) {
-	userData := &models.User{
-		Firstname: user.Firstname,
-		Lastname:  user.Lastname,
-		Address: models.UserAddress{
-			Zipcode: user.Address.Zipcode,
-			Country: user.Address.Country,
-			City:    user.Address.City,
-			Street:  user.Address.Street,
-		},
-	}
-	userUpdated, err := usecase.userStore.UpdateUserData(ctx, id, userData)
+func (usecase *UserUsecase) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
+	usecase.logger.Sugar().Debugf("Enter in usecase UpdateUserData() with args: ctx, user: %v", user)
+
+	userUpdated, err := usecase.userStore.UpdateUserData(ctx, user)
 	if err != nil {
 		return nil, err
 	}

@@ -84,7 +84,7 @@ func (delivery *UserDelivery) CreateUser(c *gin.Context) {
 	}
 
 	// Check user in database
-	if existedUser, err := delivery.userUsecase.GetUserByEmail(ctx, newUser.Email); err == nil && existedUser.ID != uuid.Nil {
+	if existedUser, err := delivery.userUsecase.GetUserByEmail(ctx, newUser.Email); err == nil && existedUser.Id != uuid.Nil {
 		delivery.logger.Error("user is already exists")
 		helper.SetError(c, http.StatusContinue, fmt.Errorf("user is already exists"))
 		return
@@ -150,7 +150,7 @@ func (delivery *UserDelivery) LoginUser(c *gin.Context) {
 		return
 	}
 
-	cartExist, err := delivery.cartUsecase.GetCartByUserId(ctx, userExist.ID)
+	cartExist, err := delivery.cartUsecase.GetCartByUserId(ctx, userExist.Id)
 	if err != nil && errors.Is(err, models.ErrorNotFound{}) {
 		delivery.logger.Error(err.Error())
 		helper.SetError(c, http.StatusContinue, err)
@@ -160,7 +160,7 @@ func (delivery *UserDelivery) LoginUser(c *gin.Context) {
 	if cartExist != nil {
 		cartId = cartExist.Id
 	} else {
-		cartId, err = delivery.cartUsecase.CreateCart(ctx, userExist.ID)
+		cartId, err = delivery.cartUsecase.CreateCart(ctx, userExist.Id)
 		if err != nil {
 			delivery.logger.Error(err.Error())
 			helper.SetError(c, http.StatusNotFound, err)
@@ -185,7 +185,7 @@ func (delivery *UserDelivery) LoginUser(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-// UserProfile user profile
+// GetUserProfile get user profile
 //
 //	@Summary		User profile
 //	@Description	Method provides to get profile info
@@ -196,7 +196,7 @@ func (delivery *UserDelivery) LoginUser(c *gin.Context) {
 //	@Success		201	{object}	user.CreateUserData
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Router			/user/profile [get]
-func (delivery *UserDelivery) UserProfile(c *gin.Context) {
+func (delivery *UserDelivery) GetUserProfile(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UserProfile()")
 	userCr, ok := c.MustGet("claims").(*jwtauth.Payload)
 	if !ok {
@@ -215,7 +215,7 @@ func (delivery *UserDelivery) UserProfile(c *gin.Context) {
 	c.JSON(http.StatusCreated, userData)
 }
 
-// UserProfileUpdate user profile update
+// UpdateUserData user profile update
 //
 //	@Summary		User profile update
 //	@Description	Method provides to update profile info
@@ -227,7 +227,7 @@ func (delivery *UserDelivery) UserProfile(c *gin.Context) {
 //	@Success		201	{object}	user.CreateUserData
 //	@Failure		404	{object}	ErrorResponse	"404 Not Found"
 //	@Router			/user/profile/edit [put]
-func (delivery *UserDelivery) UserProfileUpdate(c *gin.Context) {
+func (delivery *UserDelivery) UpdateUserData(c *gin.Context) {
 	delivery.logger.Debug("Enter in delivery UserProfileUpdate()")
 
 	userCr, ok := c.MustGet("claims").(*jwtauth.Payload)
@@ -237,14 +237,29 @@ func (delivery *UserDelivery) UserProfileUpdate(c *gin.Context) {
 		return
 	}
 
-	var newInfoUser *user.CreateUserData
-	if err := c.ShouldBindJSON(&newInfoUser); err != nil {
+	var newUserData *user.CreateUserData
+	if err := c.ShouldBindJSON(&newUserData); err != nil {
 		delivery.logger.Error(err.Error())
-		helper.SetError(c, http.StatusNotFound, err)
+		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
 
-	userUpdated, err := delivery.userUsecase.UpdateUserData(c.Request.Context(), userCr.UserId, newInfoUser)
+	
+
+	modelsUser := models.User{
+		Id: newUserData.Id,
+		Firstname: newUserData.Firstname,
+		Lastname: newUserData.Lastname,
+		Password: newUserData.Password,
+		Address: models.UserAddress{
+			Zipcode: newUserData.Address.Zipcode,
+			Country: newUserData.Address.Country,
+			City: newUserData.Address.City,
+			Street: newUserData.Address.Street,
+		},
+	}
+
+	userUpdated, err := delivery.userUsecase.UpdateUserData(c.Request.Context(), &modelsUser)
 	if err != nil {
 		delivery.logger.Error(err.Error())
 		helper.SetError(c, http.StatusNotFound, err)
@@ -252,13 +267,9 @@ func (delivery *UserDelivery) UserProfileUpdate(c *gin.Context) {
 	}
 
 	userUpdated.Email = userCr.Email
-	userUpdated.ID = userCr.UserId
+	userUpdated.Id = userCr.UserId
 
 	c.JSON(http.StatusCreated, userUpdated)
-}
-
-func (delivery *UserDelivery) TokenUpdate(c *gin.Context) {
-
 }
 
 // LoginUserGoogle Login Google
@@ -417,7 +428,7 @@ func (delivery *UserDelivery) ChangeRole(c *gin.Context) {
 	}
 	roleId, _ := delivery.userUsecase.GetRightsId(c.Request.Context(), newInfoUser.Rights.Name)
 
-	err := delivery.userUsecase.UpdateUserRole(c.Request.Context(), roleId.ID, newInfoUser.Email)
+	err := delivery.userUsecase.UpdateUserRole(c.Request.Context(), roleId.Id, newInfoUser.Email)
 	if err != nil {
 		delivery.logger.Error(err.Error())
 		helper.SetError(c, http.StatusNotFound, err)

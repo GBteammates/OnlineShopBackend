@@ -36,7 +36,7 @@ func NewPgxStorage(ctx context.Context, logger *zap.SugaredLogger, dsn string) (
 }
 
 // used to create configuration for connection from config
-func configurePool(conf *pgxpool.Config) (err error) {
+func configurePool(conf *pgxpool.Config) {
 	// add cofiguration
 	conf.MaxConns = int32(30)
 	conf.MinConns = int32(5)
@@ -49,7 +49,6 @@ func configurePool(conf *pgxpool.Config) (err error) {
 		KeepAlive: conf.HealthCheckPeriod,
 		Timeout:   conf.ConnConfig.ConnectTimeout,
 	}).DialContext
-	return nil
 }
 
 // Configurates connection to get ready for work
@@ -60,7 +59,7 @@ func (pg *PGres) initStorage(ctx context.Context, dns string) (*pgxpool.Pool, er
 		pg.logger.Errorf("can't init storage: %s", err)
 		return nil, fmt.Errorf("can't init storage: %w", err)
 	}
-	err = configurePool(conf)
+	configurePool(conf)
 	if err != nil {
 		pg.logger.Errorf("can't configure pool %s", err)
 		return nil, fmt.Errorf("can't configure pool %w", err)
@@ -82,7 +81,7 @@ func (pg *PGres) GetPool() *pgxpool.Pool {
 }
 
 // ShutDown close connection with database
-func (pg *PGres) ShutDown(timeout int) error{
+func (pg *PGres) Shutdown(timeout int) error{
 	pg.logger.Debug("Enter in pgrepo ShutDown()")
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	defer cancel()

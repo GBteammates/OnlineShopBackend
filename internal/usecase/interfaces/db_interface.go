@@ -38,8 +38,7 @@ type UserStore interface {
 	CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error)
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetRightsId(ctx context.Context, name string) (models.Rights, error)
-	UpdateUserData(ctx context.Context, id uuid.UUID, user *models.User) (*models.User, error)
-	SaveSession(ctx context.Context, token string, t int64) error
+	UpdateUserData(ctx context.Context, user *models.User) (*models.User, error)
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
 	GetRightsList(ctx context.Context) (chan models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
@@ -59,6 +58,6 @@ type OrderStore interface {
 	DeleteOrder(ctx context.Context, order *models.Order) error
 	ChangeAddress(ctx context.Context, order *models.Order, address models.UserAddress) error
 	ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error
-	GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error)
-	GetOrdersForUser(ctx context.Context, user *models.User) (chan models.Order, error)
+	GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error)
+	GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error)
 }

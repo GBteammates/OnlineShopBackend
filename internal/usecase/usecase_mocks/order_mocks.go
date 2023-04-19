@@ -17,16 +17,16 @@ var _ usecase.IOrderUsecase = (*OrderUsecaseMock)(nil)
 
 func (o *OrderUsecaseMock) PlaceOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
 	return &models.Order{
-		ID: uuid.New(),
+		Id: uuid.New(),
 	}, o.Err
 }
 func (o *OrderUsecaseMock) ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error {
 	return o.Err
 }
-func (o *OrderUsecaseMock) GetOrdersForUser(ctx context.Context, user *models.User) ([]models.Order, error) {
+func (o *OrderUsecaseMock) GetOrdersByUser(ctx context.Context, user *models.User) ([]models.Order, error) {
 	return []models.Order{
 		{
-			ID:           uuid.New(),
+			Id:           uuid.New(),
 			ShipmentTime: time.Now().Add(time.Duration(models.StandardShipmentPeriod.Hours())),
 			User:         *user,
 			Status:       models.StatusCourier,
@@ -47,7 +47,7 @@ func (o *OrderUsecaseMock) GetOrdersForUser(ctx context.Context, user *models.Us
 				},
 			},
 		}, {
-			ID:           uuid.New(),
+			Id:           uuid.New(),
 			ShipmentTime: time.Now().Add(time.Duration(models.StandardShipmentPeriod.Hours())),
 			User:         *user,
 			Status:       models.StatusCourier,
@@ -79,10 +79,10 @@ func (o *OrderUsecaseMock) ChangeAddress(ctx context.Context, order *models.Orde
 }
 func (o *OrderUsecaseMock) GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 	return &models.Order{
-		ID:           uuid.New(),
+		Id:           uuid.New(),
 		ShipmentTime: time.Now().Add(time.Duration(models.StandardShipmentPeriod.Hours())),
 		User: models.User{
-			ID: uuid.New(),
+			Id: uuid.New(),
 		},
 		Status: models.StatusCourier,
 		Items: []models.ItemWithQuantity{

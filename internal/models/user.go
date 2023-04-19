@@ -3,7 +3,7 @@ package models
 import "github.com/google/uuid"
 
 type User struct {
-	ID        uuid.UUID   `json:"id"`
+	Id       uuid.UUID   `json:"id"`
 	Firstname string      `json:"firstname,omitempty"`
 	Lastname  string      `json:"lastname,omitempty"`
 	Password  string      `json:"password,omitempty"`

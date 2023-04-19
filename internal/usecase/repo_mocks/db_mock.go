@@ -466,33 +466,19 @@ func (mr *MockUserStoreMockRecorder) GetUserByEmail(ctx, email interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserByEmail", reflect.TypeOf((*MockUserStore)(nil).GetUserByEmail), ctx, email)
 }
 
-// SaveSession mocks base method.
-func (m *MockUserStore) SaveSession(ctx context.Context, token string, t int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveSession", ctx, token, t)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveSession indicates an expected call of SaveSession.
-func (mr *MockUserStoreMockRecorder) SaveSession(ctx, token, t interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveSession", reflect.TypeOf((*MockUserStore)(nil).SaveSession), ctx, token, t)
-}
-
 // UpdateUserData mocks base method.
-func (m *MockUserStore) UpdateUserData(ctx context.Context, id uuid.UUID, user *models.User) (*models.User, error) {
+func (m *MockUserStore) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateUserData", ctx, id, user)
+	ret := m.ctrl.Call(m, "UpdateUserData", ctx, user)
 	ret0, _ := ret[0].(*models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateUserData indicates an expected call of UpdateUserData.
-func (mr *MockUserStoreMockRecorder) UpdateUserData(ctx, id, user interface{}) *gomock.Call {
+func (mr *MockUserStoreMockRecorder) UpdateUserData(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserData", reflect.TypeOf((*MockUserStore)(nil).UpdateUserData), ctx, id, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserData", reflect.TypeOf((*MockUserStore)(nil).UpdateUserData), ctx, user)
 }
 
 // UpdateUserRole mocks base method.
@@ -699,32 +685,32 @@ func (mr *MockOrderStoreMockRecorder) DeleteOrder(ctx, order interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOrder", reflect.TypeOf((*MockOrderStore)(nil).DeleteOrder), ctx, order)
 }
 
-// GetOrderByID mocks base method.
-func (m *MockOrderStore) GetOrderByID(ctx context.Context, id uuid.UUID) (models.Order, error) {
+// GetOrderById mocks base method.
+func (m *MockOrderStore) GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderByID", ctx, id)
+	ret := m.ctrl.Call(m, "GetOrderById", ctx, id)
 	ret0, _ := ret[0].(models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrderByID indicates an expected call of GetOrderByID.
-func (mr *MockOrderStoreMockRecorder) GetOrderByID(ctx, id interface{}) *gomock.Call {
+// GetOrderById indicates an expected call of GetOrderById.
+func (mr *MockOrderStoreMockRecorder) GetOrderById(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByID", reflect.TypeOf((*MockOrderStore)(nil).GetOrderByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderById", reflect.TypeOf((*MockOrderStore)(nil).GetOrderById), ctx, id)
 }
 
-// GetOrdersForUser mocks base method.
-func (m *MockOrderStore) GetOrdersForUser(ctx context.Context, user *models.User) (chan models.Order, error) {
+// GetOrdersByUser mocks base method.
+func (m *MockOrderStore) GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrdersForUser", ctx, user)
+	ret := m.ctrl.Call(m, "GetOrdersByUser", ctx, user)
 	ret0, _ := ret[0].(chan models.Order)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetOrdersForUser indicates an expected call of GetOrdersForUser.
-func (mr *MockOrderStoreMockRecorder) GetOrdersForUser(ctx, user interface{}) *gomock.Call {
+// GetOrdersByUser indicates an expected call of GetOrdersByUser.
+func (mr *MockOrderStoreMockRecorder) GetOrdersByUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersForUser", reflect.TypeOf((*MockOrderStore)(nil).GetOrdersForUser), ctx, user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByUser", reflect.TypeOf((*MockOrderStore)(nil).GetOrdersByUser), ctx, user)
 }
