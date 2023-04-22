@@ -10,18 +10,18 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ usecase.IUserUsecase = &UserUsecase{}
+var _ usecase.IUserUsecase = (*userUsecase)(nil)
 
-type UserUsecase struct {
+type userUsecase struct {
 	userStore usecase.UserStore
 	logger    *zap.Logger
 }
 
-func NewUserUsecase(userStore usecase.UserStore, logger *zap.Logger) usecase.IUserUsecase {
-	return &UserUsecase{userStore: userStore, logger: logger}
+func NewUserUsecase(userStore usecase.UserStore, logger *zap.Logger) *userUsecase {
+	return &userUsecase{userStore: userStore, logger: logger}
 }
 
-func (usecase *UserUsecase) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
+func (usecase *userUsecase) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
 	usecase.logger.Debug("Enter in usecase CreateUser()")
 
 	id, err := usecase.userStore.CreateUser(ctx, user)
@@ -31,7 +31,7 @@ func (usecase *UserUsecase) CreateUser(ctx context.Context, user *models.User) (
 	return id, nil
 }
 
-func (usecase *UserUsecase) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (usecase *userUsecase) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetUserByEmail() with args: ctx, email: %s", email)
 
 	user, err := usecase.userStore.GetUserByEmail(ctx, email)
@@ -42,7 +42,7 @@ func (usecase *UserUsecase) GetUserByEmail(ctx context.Context, email string) (*
 	return user, nil
 }
 
-func (usecase *UserUsecase) GetRightsId(ctx context.Context, name string) (*models.Rights, error) {
+func (usecase *userUsecase) GetRightsId(ctx context.Context, name string) (*models.Rights, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetRightsId() with args: ctx, name: %s", name)
 
 	rights, err := usecase.userStore.GetRightsId(ctx, name)
@@ -53,7 +53,7 @@ func (usecase *UserUsecase) GetRightsId(ctx context.Context, name string) (*mode
 	return &rights, nil
 }
 
-func (usecase *UserUsecase) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
+func (usecase *userUsecase) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateUserData() with args: ctx, user: %v", user)
 
 	userUpdated, err := usecase.userStore.UpdateUserData(ctx, user)
@@ -63,7 +63,7 @@ func (usecase *UserUsecase) UpdateUserData(ctx context.Context, user *models.Use
 	return userUpdated, nil
 }
 
-func (usecase *UserUsecase) UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error {
+func (usecase *userUsecase) UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error {
 	err := usecase.userStore.UpdateUserRole(ctx, roleId, email)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (usecase *UserUsecase) UpdateUserRole(ctx context.Context, roleId uuid.UUID
 	return nil
 }
 
-func (usecase *UserUsecase) GetRightsList(ctx context.Context) ([]models.Rights, error) {
+func (usecase *userUsecase) GetRightsList(ctx context.Context) ([]models.Rights, error) {
 	usecase.logger.Debug("Enter in usecase GetRightsList() with args: ctx")
 	rightsIncomingChan, err := usecase.userStore.GetRightsList(ctx)
 	if err != nil {
@@ -87,7 +87,7 @@ func (usecase *UserUsecase) GetRightsList(ctx context.Context) ([]models.Rights,
 
 }
 
-func (usecase *UserUsecase) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error) {
+func (usecase *userUsecase) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase CreateRights() with args: ctx, rights: %v", rights)
 
 	id, err := usecase.userStore.CreateRights(ctx, rights)

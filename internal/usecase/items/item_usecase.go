@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase/interfaces"
+	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ usecase.IItemUsecase = &ItemUsecase{}
+var _ usecase.IItemUsecase = (*itemUsecase)(nil)
 
 // Keys for create and get cache
 const (
@@ -26,16 +26,16 @@ const (
 	itemsQuantityKey      = "ItemsQuantity"
 )
 
-type ItemUsecase struct {
+type itemUsecase struct {
 	itemStore   usecase.ItemStore
 	itemCache   usecase.IItemsCache
 	filestorage usecase.FileStorager
 	logger      *zap.Logger
 }
 
-func NewItemUsecase(itemStore usecase.ItemStore, itemCache usecase.IItemsCache, filestorage usecase.FileStorager, logger *zap.Logger) usecase.IItemUsecase {
+func NewItemUsecase(itemStore usecase.ItemStore, itemCache usecase.IItemsCache, filestorage usecase.FileStorager, logger *zap.Logger) *itemUsecase {
 	logger.Debug("Enter in usecase NewItemUsecase()")
-	return &ItemUsecase{
+	return &itemUsecase{
 		itemStore:   itemStore,
 		itemCache:   itemCache,
 		filestorage: filestorage,
@@ -43,7 +43,7 @@ func NewItemUsecase(itemStore usecase.ItemStore, itemCache usecase.IItemsCache, 
 }
 
 // CreateItem call database method and returns id of created item or error
-func (usecase *ItemUsecase) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
+func (usecase *itemUsecase) CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase CreateItem() with args: ctx, item: %v", item)
 	id, err := usecase.itemStore.CreateItem(ctx, item)
 	if err != nil {
@@ -57,7 +57,7 @@ func (usecase *ItemUsecase) CreateItem(ctx context.Context, item *models.Item) (
 }
 
 // UpdateItem call database method to update item and returns error or nil
-func (usecase *ItemUsecase) UpdateItem(ctx context.Context, item *models.Item) error {
+func (usecase *itemUsecase) UpdateItem(ctx context.Context, item *models.Item) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateItem() with args: ctx, item: %v", item)
 	err := usecase.itemStore.UpdateItem(ctx, item)
 	if err != nil {
@@ -71,7 +71,7 @@ func (usecase *ItemUsecase) UpdateItem(ctx context.Context, item *models.Item) e
 }
 
 // GetItem call database and returns *models.Item with given id or returns error
-func (usecase *ItemUsecase) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error) {
+func (usecase *itemUsecase) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetItem() with args: ctx, id: %v", id)
 	item, err := usecase.itemStore.GetItem(ctx, id)
 	if err != nil {
@@ -81,7 +81,7 @@ func (usecase *ItemUsecase) GetItem(ctx context.Context, id uuid.UUID) (*models.
 }
 
 // AddFavouriteItem added item in list of favourites items
-func (usecase *ItemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error {
+func (usecase *itemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase AddFavouriteItem() with args: ctx, userId: %v, itemId: %v", userId, itemId)
 	err := usecase.itemStore.AddFavouriteItem(ctx, userId, itemId)
 	if err != nil {
@@ -93,7 +93,7 @@ func (usecase *ItemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UU
 }
 
 // DeleteFavouriteItem deleted item from list of favourites items
-func (usecase *ItemUsecase) DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error {
+func (usecase *itemUsecase) DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteFavouriteItem() with args: ctx, userId: %v, itemId: %v", userId, itemId)
 	err := usecase.itemStore.DeleteFavouriteItem(ctx, userId, itemId)
 	if err != nil {
@@ -105,7 +105,7 @@ func (usecase *ItemUsecase) DeleteFavouriteItem(ctx context.Context, userId uuid
 }
 
 // DeleteItem call database method for deleting item
-func (usecase *ItemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error {
+func (usecase *itemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItem() with args: ctx, id: %v", id)
 	err := usecase.itemStore.DeleteItem(ctx, id)
 	if err != nil {
@@ -120,7 +120,7 @@ func (usecase *ItemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error 
 
 // ItemsQuantity check cache and if cache not exists call database
 // method and write in cache and returns quantity of all items
-func (usecase *ItemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
+func (usecase *itemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 	usecase.logger.Debug("Enter in usecase ItemsQuantity() with args: ctx")
 	// Context with timeout so as not to wait for an answer from the cache for too long
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
@@ -159,7 +159,7 @@ func (usecase *ItemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 
 // ItemsQuantityInCategory check cache and if cache not exists call database
 // method and write in cache and returns quantity of items in category
-func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error) {
+func (usecase *itemUsecase) ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInCategory() with args: ctx, categoryName: %s", categoryName)
 	key := categoryName + "Quantity"
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -199,7 +199,7 @@ func (usecase *ItemUsecase) ItemsQuantityInCategory(ctx context.Context, categor
 
 // ItemsQuantityInSearch check cache and if cache not exists call database method and write
 // in cache and returns quantity of items in search request
-func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchRequest string) (int, error) {
+func (usecase *itemUsecase) ItemsQuantityInSearch(ctx context.Context, searchRequest string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInSearch() with args: ctx, searchRequest: %s", searchRequest)
 	key := searchRequest + "Quantity"
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -239,7 +239,7 @@ func (usecase *ItemUsecase) ItemsQuantityInSearch(ctx context.Context, searchReq
 
 // ItemsQuantityInFavourite check cache and if cache not exists call database
 // method and write in cache and returns quantity of items in favourite
-func (usecase *ItemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId uuid.UUID) (int, error) {
+func (usecase *itemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId uuid.UUID) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteQuantity() with args: ctx, userId: %v", userId)
 	key := userId.String() + "Quantity"
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -278,7 +278,7 @@ func (usecase *ItemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId
 }
 
 // ItemsList call database method and returns slice with all models.Item or error
-func (usecase *ItemUsecase) ItemsList(ctx context.Context, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
+func (usecase *itemUsecase) ItemsList(ctx context.Context, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsList() with args: ctx, limitOptions: %v, sortOptions: %v", limitOptions, sortOptions)
 	// Context with timeout so as not to wait for an answer from the cache for too long
 	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
@@ -349,7 +349,7 @@ func (usecase *ItemUsecase) ItemsList(ctx context.Context, limitOptions map[stri
 }
 
 // GetItemsByCategory call database method and returns chan with all models.Item in category or error
-func (usecase *ItemUsecase) GetItemsByCategory(ctx context.Context, categoryName string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
+func (usecase *itemUsecase) GetItemsByCategory(ctx context.Context, categoryName string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetItemsByCategory() with args: ctx, categoryName: %s, limitOptions: %v, sortOptions: %v", categoryName, limitOptions, sortOptions)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -422,7 +422,7 @@ func (usecase *ItemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 }
 
 // SearchLine call database method and returns chan with all models.Item with given params or error
-func (usecase *ItemUsecase) SearchLine(ctx context.Context, param string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
+func (usecase *itemUsecase) SearchLine(ctx context.Context, param string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase SearchLine() with args: ctx, param: %s, limitOptions: %v, sortOptions: %v", param, limitOptions, sortOptions)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -495,7 +495,7 @@ func (usecase *ItemUsecase) SearchLine(ctx context.Context, param string, limitO
 }
 
 // GetFavouriteItems call database method and returns chan with models.Item from list of favourites item or error
-func (usecase *ItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
+func (usecase *itemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteItems() with args: ctx, userId: %v", userId)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -568,7 +568,7 @@ func (usecase *ItemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 }
 
 // GetFavouriteItemsId calls database method and returns map with identificators of favourite items of user or error
-func (usecase *ItemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error) {
+func (usecase *itemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteItemsId() with args: ctx, userId: %v", userId)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -623,7 +623,7 @@ func (usecase *ItemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 }
 
 // UpdateCache updating cache when creating or updating item
-func (usecase *ItemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
+func (usecase *itemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
 	usecase.logger.Sugar().Debugf("Enter in itemUsecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
 	// Check the presence of a cache with all possible keys
 	if !usecase.itemCache.CheckCache(ctx, itemsListKeyNameAsc) &&
@@ -712,7 +712,7 @@ func (usecase *ItemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op st
 }
 
 // UpdateItemsInCategoryCache update cache items from category
-func (usecase *ItemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error {
+func (usecase *itemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error {
 	usecase.logger.Debug(fmt.Sprintf("Enter in usecase UpdateItemsInCategoryCache() with args: ctx, newItem: %v, op: %s", newItem, op))
 	categoryItemsKeyNameAsc := newItem.Category.Name + "nameasc"
 	categoryItemsKeyNameDesc := newItem.Category.Name + "namedesc"
@@ -785,7 +785,7 @@ func (usecase *ItemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newI
 	return nil
 }
 
-func (usecase *ItemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string) {
+func (usecase *itemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string) {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavouriteItemsCache() with args: ctx, userId: %v, itemId: %v, op: %s", userId, itemId, op)
 	favouriteItemsKeyNameAsc := userId.String() + "nameasc"
 	favouriteItemsKeyNameDesc := userId.String() + "namedesc"
@@ -860,7 +860,7 @@ func (usecase *ItemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userI
 }
 
 // UpdateFavIdsCache updates cache with favourite items identificators
-func (usecase *ItemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
+func (usecase *itemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavIdsCache() with args userId: %v, itemId: %v", userId, itemId)
 	// Check the presence of a cache with key
 	if !usecase.itemCache.CheckCache(ctx, userId.String()+"Fav") {
@@ -904,7 +904,7 @@ func (usecase *ItemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemI
 }
 
 // SortItems sorts list of items by sort parameters
-func (usecase *ItemUsecase) SortItems(items []models.Item, sortType string, sortOrder string) {
+func (usecase *itemUsecase) SortItems(items []models.Item, sortType string, sortOrder string) {
 	usecase.logger.Sugar().Debugf("Enter in usecase SortItems() with args: items []models.Item, sortType: %s, sortOrder: %s", sortType, sortOrder)
 	sortType = strings.ToLower(sortType)
 	sortOrder = strings.ToLower(sortOrder)
@@ -926,7 +926,7 @@ func (usecase *ItemUsecase) SortItems(items []models.Item, sortType string, sort
 	}
 }
 
-func (usecase *ItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
+func (usecase *itemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase UploadImage() with args: ctx, id: %v, name: %s, file", id, name)
 	// Request item for which the picture is installed
 	item, err := usecase.itemStore.GetItem(ctx, id)
@@ -960,7 +960,7 @@ func (usecase *ItemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 	return nil
 }
 
-func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error {
+func (usecase *itemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItemImage() with args: ctx, id: %v, name: %s", id, name)
 
 	// Get item from which the picture is deleted
@@ -997,7 +997,7 @@ func (usecase *ItemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	return nil
 }
 
-func (usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error) {
+func (usecase *itemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error) {
 	usecase.logger.Debug("Enter in usecase GetItemsImagesList()")
 
 	result, err := usecase.filestorage.GetItemsImagesList()
@@ -1007,7 +1007,7 @@ func (usecase *ItemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.F
 	return result, nil
 }
 
-func (usecase *ItemUsecase) DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error {
+func (usecase *itemUsecase) DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItemImagesFolderById() with args: ctx, id: %v", id)
 
 	err := usecase.filestorage.DeleteItemImagesFolderById(id.String())

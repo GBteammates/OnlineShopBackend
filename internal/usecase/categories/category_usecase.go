@@ -2,7 +2,7 @@ package usecase
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase/interfaces"
+	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
 	"sort"
@@ -13,26 +13,30 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ usecase.ICategoryUsecase = &CategoryUsecase{}
+var _ usecase.ICategoryUsecase = (*categoryUsecase)(nil)
 
 var (
 	categoriesListKey = "CategoriesList"
 )
 
-type CategoryUsecase struct {
+type categoryUsecase struct {
 	categoryStore   usecase.CategoryStore
 	categoriesCache usecase.ICategoriesCache
 	filestorage     usecase.FileStorager
 	logger          *zap.Logger
 }
 
-func NewCategoryUsecase(store usecase.CategoryStore, cache usecase.ICategoriesCache, logger *zap.Logger) usecase.ICategoryUsecase {
-	logger.Debug("Enter in usecase NewCategoryUsecase()")
-	return &CategoryUsecase{categoryStore: store, categoriesCache: cache, logger: logger}
+func NewCategoryUsecase(store usecase.CategoryStore, cache usecase.ICategoriesCache, filestorage usecase.FileStorager, logger *zap.Logger) *categoryUsecase {
+	logger.Debug("Enter in usecase NewcategoryUsecase()")
+	return &categoryUsecase{
+		categoryStore:   store,
+		categoriesCache: cache,
+		filestorage:     filestorage,
+		logger:          logger}
 }
 
-// / CreateCategory call database method and returns id of created category or error
-func (usecase *CategoryUsecase) CreateCategory(ctx context.Context, category *models.Category) (uuid.UUID, error) {
+// CreateCategory call database method and returns id of created category or error
+func (usecase *categoryUsecase) CreateCategory(ctx context.Context, category *models.Category) (uuid.UUID, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase CreateCategory() with args: ctx, category: %v", category)
 	id, err := usecase.categoryStore.CreateCategory(ctx, category)
 	if err != nil {
@@ -48,7 +52,7 @@ func (usecase *CategoryUsecase) CreateCategory(ctx context.Context, category *mo
 }
 
 // UpdateCategory call database method to update category and returns error or nil
-func (usecase *CategoryUsecase) UpdateCategory(ctx context.Context, category *models.Category) error {
+func (usecase *categoryUsecase) UpdateCategory(ctx context.Context, category *models.Category) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCategory() with args: ctx, category: %v", category)
 	err := usecase.categoryStore.UpdateCategory(ctx, category)
 	if err != nil {
@@ -64,7 +68,7 @@ func (usecase *CategoryUsecase) UpdateCategory(ctx context.Context, category *mo
 }
 
 // GetCategory call database and returns *models.Category with given id or returns error
-func (usecase *CategoryUsecase) GetCategory(ctx context.Context, id uuid.UUID) (*models.Category, error) {
+func (usecase *categoryUsecase) GetCategory(ctx context.Context, id uuid.UUID) (*models.Category, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetCategory() with args: ctx, id: %v", id)
 	category, err := usecase.categoryStore.GetCategory(ctx, id)
 	if err != nil {
@@ -74,7 +78,7 @@ func (usecase *CategoryUsecase) GetCategory(ctx context.Context, id uuid.UUID) (
 }
 
 // GetCategoryList call database method and returns chan with all models.Category or error
-func (usecase *CategoryUsecase) GetCategoryList(ctx context.Context) ([]models.Category, error) {
+func (usecase *categoryUsecase) GetCategoryList(ctx context.Context) ([]models.Category, error) {
 	usecase.logger.Debug("Enter in usecase GetCategoryList() with args: ctx")
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
@@ -123,7 +127,7 @@ func (usecase *CategoryUsecase) GetCategoryList(ctx context.Context) ([]models.C
 }
 
 // DeleteCategory call database method for deleting category
-func (usecase *CategoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID) error {
+func (usecase *categoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteCategory() with args: ctx, id: %v", id)
 	err := usecase.categoryStore.DeleteCategory(ctx, id)
 	if err != nil {
@@ -138,7 +142,7 @@ func (usecase *CategoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID
 }
 
 // GetCategoryByName call database method for get category by name
-func (usecase *CategoryUsecase) GetCategoryByName(ctx context.Context, name string) (*models.Category, error) {
+func (usecase *categoryUsecase) GetCategoryByName(ctx context.Context, name string) (*models.Category, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase GetCategoryByName() with args: ctx, name: %s", name)
 	category, err := usecase.categoryStore.GetCategoryByName(ctx, name)
 	if err != nil {
@@ -149,7 +153,7 @@ func (usecase *CategoryUsecase) GetCategoryByName(ctx context.Context, name stri
 }
 
 // UpdateCache updating cache when creating or updating category
-func (usecase *CategoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
+func (usecase *categoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
 	// If the cache with such a key does not exist, we return the error, there is nothing to update
 	if !usecase.categoriesCache.CheckCache(ctx, categoriesListKey) {
@@ -204,7 +208,7 @@ func (usecase *CategoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, o
 }
 
 // DeleteCategoryCache deleted cache after deleting categories
-func (usecase *CategoryUsecase) DeleteCategoryCache(ctx context.Context, name string) error {
+func (usecase *categoryUsecase) DeleteCategoryCache(ctx context.Context, name string) error {
 	usecase.logger.Debug(fmt.Sprintf("Enter in usecase DeleteCategoryCache() with args: ctx, name: %s", name))
 	// keys is a list of cache keys with items in deleted category sorting by name and price
 	keys := []string{name + "nameasc", name + "namedesc", name + "priceasc", name + "pricedesc"}
@@ -226,17 +230,17 @@ func (usecase *CategoryUsecase) DeleteCategoryCache(ctx context.Context, name st
 	return nil
 }
 
-func (usecase *CategoryUsecase) UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
+func (usecase *categoryUsecase) UploadCategoryImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase UploadCategoryImage() with args: ctx, id: %v, name: %s, file", id, name)
-
-	path, err := usecase.filestorage.PutCategoryImage(id.String(), name, file)
-	if err != nil {
-		return fmt.Errorf("error on put image to filestorage: %w", err)
-	}
 
 	category, err := usecase.categoryStore.GetCategory(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get category: %w", err)
+	}
+
+	path, err := usecase.filestorage.PutCategoryImage(id.String(), name, file)
+	if err != nil {
+		return fmt.Errorf("error on put image to filestorage: %w", err)
 	}
 
 	category.Image = path
@@ -255,7 +259,7 @@ func (usecase *CategoryUsecase) UploadCategoryImage(ctx context.Context, id uuid
 	return nil
 }
 
-func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error {
+func (usecase *categoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid.UUID, name string) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteCategoryImage() with args: ctx, id: %v, name: %s", id, name)
 
 	category, err := usecase.categoryStore.GetCategory(ctx, id)
@@ -265,6 +269,12 @@ func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid
 	if strings.Contains(category.Image, name) {
 		category.Image = ""
 	}
+
+	err = usecase.filestorage.DeleteCategoryImage(id.String(), name)
+	if err != nil {
+		return fmt.Errorf("error on delete category image: %w", err)
+	}
+
 	err = usecase.categoryStore.UpdateCategory(ctx, category)
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
@@ -278,7 +288,7 @@ func (usecase *CategoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid
 	return nil
 }
 
-func (usecase *CategoryUsecase) GetCategoriesImagesList(ctx context.Context) ([]*models.FileInfo, error) {
+func (usecase *categoryUsecase) GetCategoriesImagesList(ctx context.Context) ([]*models.FileInfo, error) {
 	usecase.logger.Debug("Enter in usecase GetCategoriesImagesList()")
 
 	result, err := usecase.filestorage.GetCategoriesImagesList()
@@ -288,7 +298,7 @@ func (usecase *CategoryUsecase) GetCategoriesImagesList(ctx context.Context) ([]
 	return result, nil
 }
 
-func (usecase *CategoryUsecase) DeleteCategoryImageById(ctx context.Context, id uuid.UUID) error {
+func (usecase *categoryUsecase) DeleteCategoryImageById(ctx context.Context, id uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase DeleteCategoryImageById() with arts: ctx, id: %v", id)
 
 	err := usecase.filestorage.DeleteCategoryImageById(id.String())
