@@ -625,6 +625,21 @@ func (mr *MockIOrderUsecaseMockRecorder) ChangeStatus(ctx, order, newStatus inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockIOrderUsecase)(nil).ChangeStatus), ctx, order, newStatus)
 }
 
+// CreateOrder mocks base method.
+func (m *MockIOrderUsecase) CreateOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrder", ctx, cart, user, address)
+	ret0, _ := ret[0].(*models.Order)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateOrder indicates an expected call of CreateOrder.
+func (mr *MockIOrderUsecaseMockRecorder) CreateOrder(ctx, cart, user, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrder", reflect.TypeOf((*MockIOrderUsecase)(nil).CreateOrder), ctx, cart, user, address)
+}
+
 // DeleteOrder mocks base method.
 func (m *MockIOrderUsecase) DeleteOrder(ctx context.Context, order *models.Order) error {
 	m.ctrl.T.Helper()
@@ -667,21 +682,6 @@ func (m *MockIOrderUsecase) GetOrdersByUser(ctx context.Context, user *models.Us
 func (mr *MockIOrderUsecaseMockRecorder) GetOrdersByUser(ctx, user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrdersByUser", reflect.TypeOf((*MockIOrderUsecase)(nil).GetOrdersByUser), ctx, user)
-}
-
-// PlaceOrder mocks base method.
-func (m *MockIOrderUsecase) PlaceOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PlaceOrder", ctx, cart, user, address)
-	ret0, _ := ret[0].(*models.Order)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PlaceOrder indicates an expected call of PlaceOrder.
-func (mr *MockIOrderUsecaseMockRecorder) PlaceOrder(ctx, cart, user, address interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PlaceOrder", reflect.TypeOf((*MockIOrderUsecase)(nil).PlaceOrder), ctx, cart, user, address)
 }
 
 // MockICartUsecase is a mock of ICartUsecase interface.

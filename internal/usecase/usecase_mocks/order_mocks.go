@@ -15,7 +15,7 @@ type OrderUsecaseMock struct {
 
 var _ usecase.IOrderUsecase = (*OrderUsecaseMock)(nil)
 
-func (o *OrderUsecaseMock) PlaceOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
+func (o *OrderUsecaseMock) CreateOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
 	return &models.Order{
 		Id: uuid.New(),
 	}, o.Err

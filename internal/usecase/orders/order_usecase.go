@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 )
 
+var _ usecase.IOrderUsecase = (*orderUsecase)(nil)
+
 type orderUsecase struct {
 	orderStore usecase.OrderStore
 	logger     *zap.SugaredLogger
 }
-
-var _ usecase.IOrderUsecase = (*orderUsecase)(nil)
 
 func NewOrderUsecase(orderStore usecase.OrderStore, logger *zap.SugaredLogger) *orderUsecase {
 	return &orderUsecase{
@@ -25,7 +25,7 @@ func NewOrderUsecase(orderStore usecase.OrderStore, logger *zap.SugaredLogger) *
 	}
 }
 
-func (usecase *orderUsecase) PlaceOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
+func (usecase *orderUsecase) CreateOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
 	select {
 	case <-ctx.Done():
 		usecase.logger.Error("context closed")

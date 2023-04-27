@@ -71,7 +71,7 @@ func main() {
 	filestorage := filestorage.NewFileStorage(cfg.ServerURL, cfg.FsPath, l)
 
 	itemUsecase := itemUsecase.NewItemUsecase(itemStore, itemsCache, filestorage, l)
-	categoryUsecase := categoryUsecase.NewCategoryUsecase(categoryStore, categoriesCache, l)
+	categoryUsecase := categoryUsecase.NewCategoryUsecase(categoryStore, categoriesCache, filestorage, l)
 	userUsecase := userUsecase.NewUserUsecase(userStore, l)
 	cartUsecase := cartUsecase.NewCartUsecase(cartStore, l)
 	orderUsecase := orderUsecase.NewOrderUsecase(orderStore, lsug)

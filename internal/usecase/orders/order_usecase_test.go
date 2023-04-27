@@ -128,7 +128,7 @@ func TestPlaceOrder(t *testing.T) {
 		},
 		ExpireAt: time.Now().Add(2 * time.Hour),
 	}
-	res, err := uscs.PlaceOrder(context.Background(), &cart, testUser, testOrder.Address)
+	res, err := uscs.CreateOrder(context.Background(), &cart, testUser, testOrder.Address)
 	require.NoError(t, err)
 	assert.Equal(t, testUser.Address, res.Address)
 	assert.Equal(t, cart.Items, res.Items)
@@ -147,7 +147,7 @@ func TestPlaceOrderDBError(t *testing.T) {
 		},
 		ExpireAt: time.Now().Add(2 * time.Hour),
 	}
-	res, err := uscs.PlaceOrder(context.Background(), &cart, testUser, testOrder.Address)
+	res, err := uscs.CreateOrder(context.Background(), &cart, testUser, testOrder.Address)
 	require.Error(t, err)
 	assert.Nil(t, res)
 }

@@ -99,7 +99,7 @@ func (delivery *OrderDelivery) CreateOrder(c *gin.Context) {
 		Street:  cart.Address.Street,
 	}
 
-	ordr, err := delivery.orderUsecase.PlaceOrder(ctx, &cartModel, user, addressMdl)
+	ordr, err := delivery.orderUsecase.CreateOrder(ctx, &cartModel, user, addressMdl)
 	if err != nil {
 		delivery.logger.Errorf("can't create order: %s", err)
 		helper.SetError(c, http.StatusInternalServerError, err)
