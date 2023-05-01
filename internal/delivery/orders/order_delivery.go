@@ -9,7 +9,6 @@ import (
 	"OnlineShopBackend/internal/models"
 	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -316,11 +315,6 @@ func (delivery *OrderDelivery) ChangeAddress(c *gin.Context) {
 		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
-	if strings.ToLower(address.User.Role) == "user" {
-		delivery.logger.Errorf("the action not allowed: %s", err)
-		helper.SetError(c, http.StatusForbidden, err)
-		return
-	}
 	userID, err := uuid.Parse(address.User.Id)
 	if err != nil {
 		delivery.logger.Errorf("can't parse order id: %s", err)
@@ -331,7 +325,13 @@ func (delivery *OrderDelivery) ChangeAddress(c *gin.Context) {
 		&models.Order{
 			Id:   orderID,
 			User: models.User{Id: userID},
-		}, models.UserAddress(address.Address))
+			Address: models.UserAddress{
+				Zipcode: address.Address.Zipcode,
+				Country: address.Address.Country,
+				City: address.Address.City,
+				Street: address.Address.Street,
+			},
+		})
 	if err != nil {
 		delivery.logger.Errorf("can't change address for order with id: %s %s", orderID, err)
 		helper.SetError(c, http.StatusInternalServerError, err)
@@ -368,11 +368,6 @@ func (delivery *OrderDelivery) ChangeStatus(c *gin.Context) {
 		helper.SetError(c, http.StatusBadRequest, err)
 		return
 	}
-	if strings.ToLower(status.User.Role) == "customer" {
-		delivery.logger.Errorf("the action not allowed: %s", err)
-		helper.SetError(c, http.StatusForbidden, err)
-		return
-	}
 	userID, err := uuid.Parse(status.User.Id)
 	if err != nil {
 		delivery.logger.Errorf("can't parse order id: %s", err)
@@ -384,7 +379,9 @@ func (delivery *OrderDelivery) ChangeStatus(c *gin.Context) {
 		User: models.User{
 			Id: userID,
 		},
-	}, models.Status(status.Status))
+		Status: models.Status(status.Status),
+	},
+)
 	if err != nil {
 		delivery.logger.Errorf("can't change address for order with id: %s %s", orderID, err)
 		helper.SetError(c, http.StatusInternalServerError, err)

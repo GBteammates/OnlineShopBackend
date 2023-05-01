@@ -56,8 +56,8 @@ type CartStore interface {
 type OrderStore interface {
 	CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error)
 	DeleteOrder(ctx context.Context, order *models.Order) error
-	ChangeAddress(ctx context.Context, order *models.Order, address models.UserAddress) error
-	ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error
+	ChangeAddress(ctx context.Context, order *models.Order) error
+	ChangeStatus(ctx context.Context, order *models.Order) error
 	GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error)
 	GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error)
 }

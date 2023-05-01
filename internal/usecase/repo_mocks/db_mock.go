@@ -629,31 +629,31 @@ func (m *MockOrderStore) EXPECT() *MockOrderStoreMockRecorder {
 }
 
 // ChangeAddress mocks base method.
-func (m *MockOrderStore) ChangeAddress(ctx context.Context, order *models.Order, address models.UserAddress) error {
+func (m *MockOrderStore) ChangeAddress(ctx context.Context, order *models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeAddress", ctx, order, address)
+	ret := m.ctrl.Call(m, "ChangeAddress", ctx, order)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangeAddress indicates an expected call of ChangeAddress.
-func (mr *MockOrderStoreMockRecorder) ChangeAddress(ctx, order, address interface{}) *gomock.Call {
+func (mr *MockOrderStoreMockRecorder) ChangeAddress(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeAddress", reflect.TypeOf((*MockOrderStore)(nil).ChangeAddress), ctx, order, address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeAddress", reflect.TypeOf((*MockOrderStore)(nil).ChangeAddress), ctx, order)
 }
 
 // ChangeStatus mocks base method.
-func (m *MockOrderStore) ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error {
+func (m *MockOrderStore) ChangeStatus(ctx context.Context, order *models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeStatus", ctx, order, status)
+	ret := m.ctrl.Call(m, "ChangeStatus", ctx, order)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangeStatus indicates an expected call of ChangeStatus.
-func (mr *MockOrderStoreMockRecorder) ChangeStatus(ctx, order, status interface{}) *gomock.Call {
+func (mr *MockOrderStoreMockRecorder) ChangeStatus(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockOrderStore)(nil).ChangeStatus), ctx, order, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockOrderStore)(nil).ChangeStatus), ctx, order)
 }
 
 // CreateOrder mocks base method.

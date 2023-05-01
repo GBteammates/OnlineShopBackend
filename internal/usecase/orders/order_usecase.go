@@ -49,16 +49,13 @@ func (usecase *orderUsecase) CreateOrder(ctx context.Context, cart *models.Cart,
 	}
 }
 
-func (usecase *orderUsecase) ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error {
+func (usecase *orderUsecase) ChangeStatus(ctx context.Context, order *models.Order) error {
 	select {
 	case <-ctx.Done():
 		usecase.logger.Error("context closed")
 		return fmt.Errorf("context closed")
 	default:
-		if newStatus == order.Status {
-			return nil
-		}
-		if err := usecase.orderStore.ChangeStatus(ctx, order, newStatus); err != nil {
+		if err := usecase.orderStore.ChangeStatus(ctx, order); err != nil {
 			usecase.logger.Errorf("can't change status of order: %s", err)
 			return fmt.Errorf("can't change status of order: %w", err)
 		}
@@ -97,16 +94,13 @@ func (usecase *orderUsecase) DeleteOrder(ctx context.Context, order *models.Orde
 	}
 }
 
-func (usecase *orderUsecase) ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error {
+func (usecase *orderUsecase) ChangeAddress(ctx context.Context, order *models.Order) error {
 	select {
 	case <-ctx.Done():
 		usecase.logger.Error("context closed")
 		return fmt.Errorf("context closed")
 	default:
-		if newAddress == order.Address {
-			return nil
-		}
-		if err := usecase.orderStore.ChangeAddress(ctx, order, newAddress); err != nil {
+		if err := usecase.orderStore.ChangeAddress(ctx, order); err != nil {
 			usecase.logger.Errorf("can't change address %s: ", err)
 			return fmt.Errorf("can't change address %w: ", err)
 		}

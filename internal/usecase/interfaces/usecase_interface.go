@@ -51,10 +51,10 @@ type ICategoryUsecase interface {
 
 type IOrderUsecase interface {
 	CreateOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error)
-	ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error
+	ChangeStatus(ctx context.Context, order *models.Order) error
 	GetOrdersByUser(ctx context.Context, user *models.User) ([]models.Order, error)
 	DeleteOrder(ctx context.Context, order *models.Order) error
-	ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error
+	ChangeAddress(ctx context.Context, order *models.Order) error
 	GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error)
 }
 type ICartUsecase interface {

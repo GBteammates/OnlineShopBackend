@@ -110,15 +110,15 @@ func (repo *orderRepo) DeleteOrder(ctx context.Context, order *models.Order) err
 		return nil
 	}
 }
-func (repo *orderRepo) ChangeAddress(ctx context.Context, order *models.Order, address models.UserAddress) error {
-	repo.logger.Debug("Enter in repository order ChangeAddress() with args: ctx, order: %v, address: %v", order, address)
+func (repo *orderRepo) ChangeAddress(ctx context.Context, order *models.Order) error {
+	repo.logger.Debug("Enter in repository order ChangeAddress() with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context closed")
 	default:
 		pool := repo.storage.GetPool()
 		_, err := pool.Exec(ctx, `UPDATE orders SET address=$1 WHERE id=$2`,
-			fmt.Sprintf("%s -> %s -> %s -> %s", address.Zipcode, address.Country, address.City, address.Street), order.Id)
+			fmt.Sprintf("%s -> %s -> %s -> %s", order.Address.Zipcode, order.Address.Country, order.Address.City, order.Address.Street), order.Id)
 		if err != nil {
 			repo.logger.Errorf("can't update address: %s", err)
 			return fmt.Errorf("can't update address: %w", err)
@@ -126,14 +126,14 @@ func (repo *orderRepo) ChangeAddress(ctx context.Context, order *models.Order, a
 		return nil
 	}
 }
-func (repo *orderRepo) ChangeStatus(ctx context.Context, order *models.Order, status models.Status) error {
-	repo.logger.Debug("Enter in repository order ChangeStatus() with args: ctx, order: %v, status: %v", order, status)
+func (repo *orderRepo) ChangeStatus(ctx context.Context, order *models.Order) error {
+	repo.logger.Debug("Enter in repository order ChangeStatus() with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context closed")
 	default:
 		pool := repo.storage.GetPool()
-		_, err := pool.Exec(ctx, `UPDATE orders SET status=$1 WHERE id=$2`, status, order.Id)
+		_, err := pool.Exec(ctx, `UPDATE orders SET status=$1 WHERE id=$2`, order.Status, order.Id)
 		if err != nil {
 			repo.logger.Errorf("can't update status: %s", err)
 			return fmt.Errorf("can't update status: %w", err)

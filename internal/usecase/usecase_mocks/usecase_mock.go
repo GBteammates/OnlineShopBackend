@@ -598,31 +598,31 @@ func (m *MockIOrderUsecase) EXPECT() *MockIOrderUsecaseMockRecorder {
 }
 
 // ChangeAddress mocks base method.
-func (m *MockIOrderUsecase) ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error {
+func (m *MockIOrderUsecase) ChangeAddress(ctx context.Context, order *models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeAddress", ctx, order, newAddress)
+	ret := m.ctrl.Call(m, "ChangeAddress", ctx, order)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangeAddress indicates an expected call of ChangeAddress.
-func (mr *MockIOrderUsecaseMockRecorder) ChangeAddress(ctx, order, newAddress interface{}) *gomock.Call {
+func (mr *MockIOrderUsecaseMockRecorder) ChangeAddress(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeAddress", reflect.TypeOf((*MockIOrderUsecase)(nil).ChangeAddress), ctx, order, newAddress)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeAddress", reflect.TypeOf((*MockIOrderUsecase)(nil).ChangeAddress), ctx, order)
 }
 
 // ChangeStatus mocks base method.
-func (m *MockIOrderUsecase) ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error {
+func (m *MockIOrderUsecase) ChangeStatus(ctx context.Context, order *models.Order) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ChangeStatus", ctx, order, newStatus)
+	ret := m.ctrl.Call(m, "ChangeStatus", ctx, order)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ChangeStatus indicates an expected call of ChangeStatus.
-func (mr *MockIOrderUsecaseMockRecorder) ChangeStatus(ctx, order, newStatus interface{}) *gomock.Call {
+func (mr *MockIOrderUsecaseMockRecorder) ChangeStatus(ctx, order interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockIOrderUsecase)(nil).ChangeStatus), ctx, order, newStatus)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangeStatus", reflect.TypeOf((*MockIOrderUsecase)(nil).ChangeStatus), ctx, order)
 }
 
 // CreateOrder mocks base method.

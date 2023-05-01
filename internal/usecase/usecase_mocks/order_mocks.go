@@ -20,7 +20,7 @@ func (o *OrderUsecaseMock) CreateOrder(ctx context.Context, cart *models.Cart, u
 		Id: uuid.New(),
 	}, o.Err
 }
-func (o *OrderUsecaseMock) ChangeStatus(ctx context.Context, order *models.Order, newStatus models.Status) error {
+func (o *OrderUsecaseMock) ChangeStatus(ctx context.Context, order *models.Order) error {
 	return o.Err
 }
 func (o *OrderUsecaseMock) GetOrdersByUser(ctx context.Context, user *models.User) ([]models.Order, error) {
@@ -74,7 +74,7 @@ func (o *OrderUsecaseMock) GetOrdersByUser(ctx context.Context, user *models.Use
 func (o *OrderUsecaseMock) DeleteOrder(ctx context.Context, order *models.Order) error {
 	return o.Err
 }
-func (o *OrderUsecaseMock) ChangeAddress(ctx context.Context, order *models.Order, newAddress models.UserAddress) error {
+func (o *OrderUsecaseMock) ChangeAddress(ctx context.Context, order *models.Order) error {
 	return o.Err
 }
 func (o *OrderUsecaseMock) GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error) {
