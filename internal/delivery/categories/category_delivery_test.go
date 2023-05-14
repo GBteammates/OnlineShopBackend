@@ -943,3 +943,35 @@ func TestDeleteCategory2(t *testing.T) {
 	delivery.DeleteCategory(c)
 	require.Equal(t, 400, w.Code)
 }
+
+func TestGetCategoriesImagesList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+	logger := zap.L()
+	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
+	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
+	delivery := NewCategoryDelivery(categoryUsecase, itemUsecase, logger.Sugar())
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+
+	categoryUsecase.EXPECT().GetCategoriesImagesList(ctx).Return(nil, fmt.Errorf("error"))
+	delivery.GetCategoriesImagesList(c)
+	require.Equal(t, 500, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+
+	categoryUsecase.EXPECT().GetCategoriesImagesList(ctx).Return([]*models.FileInfo{}, nil)
+	delivery.GetCategoriesImagesList(c)
+	require.Equal(t, 200, w.Code)
+}

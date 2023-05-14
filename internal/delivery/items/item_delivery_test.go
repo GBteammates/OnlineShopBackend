@@ -1495,3 +1495,35 @@ func TestItemsQuantityInSearch(t *testing.T) {
 	delivery.ItemsQuantityInSearch(c)
 	require.Equal(t, 200, w.Code)
 }
+
+func TestGetItemsImagesList(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	ctx := context.Background()
+	logger := zap.L()
+	itemUsecase := mocks.NewMockIItemUsecase(ctrl)
+	categoryUsecase := mocks.NewMockICategoryUsecase(ctrl)
+	delivery := NewItemDelivery(itemUsecase, categoryUsecase, logger.Sugar())
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+
+	itemUsecase.EXPECT().GetItemsImagesList(ctx).Return(nil, fmt.Errorf("error"))
+	delivery.GetItemsImagesList(c)
+	require.Equal(t, 500, w.Code)
+
+	w = httptest.NewRecorder()
+	c, _ = gin.CreateTestContext(w)
+
+	c.Request = &http.Request{
+		Header: make(http.Header),
+	}
+
+	itemUsecase.EXPECT().GetItemsImagesList(ctx).Return([]*models.FileInfo{}, nil)
+	delivery.GetItemsImagesList(c)
+	require.Equal(t, 200, w.Code)
+}
