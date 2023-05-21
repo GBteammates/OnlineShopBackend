@@ -5,7 +5,6 @@ import (
 	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,8 +13,11 @@ import (
 
 var _ usecase.ICategoryUsecase = (*categoryUsecase)(nil)
 
-var (
+const (
 	categoriesListKey = "CategoriesList"
+	createOp          = "create"
+	updateOp          = "update"
+	deleteOp          = "delete"
 )
 
 type categoryUsecase struct {
@@ -41,7 +43,8 @@ func (usecase *categoryUsecase) CreateCategory(ctx context.Context, category *mo
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create category: %w", err)
 	}
-	err = usecase.UpdateCache(ctx, id, "create")
+	category.Id = id
+	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, createOp)
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
@@ -57,7 +60,7 @@ func (usecase *categoryUsecase) UpdateCategory(ctx context.Context, category *mo
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
 	}
-	err = usecase.UpdateCache(ctx, category.Id, "update")
+	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, updateOp)
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
@@ -132,7 +135,7 @@ func (usecase *categoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID
 	if err != nil {
 		return err
 	}
-	err = usecase.UpdateCache(ctx, id, "delete")
+	err = usecase.categoriesCache.UpdateCategoryCache(ctx, &models.Category{Id: id}, deleteOp)
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	}
@@ -149,82 +152,4 @@ func (usecase *categoryUsecase) GetCategoryByName(ctx context.Context, name stri
 	}
 	usecase.logger.Info("Get category by name success")
 	return category, nil
-}
-
-// UpdateCache updating cache when creating or updating category
-func (usecase *categoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
-	// If the cache with such a key does not exist, we return the error, there is nothing to update
-	if !usecase.categoriesCache.CheckCache(ctx, categoriesListKey) {
-		return fmt.Errorf("cache is not exists")
-	}
-
-	// Get a category from the database for updating in the cache
-	newCategory, err := usecase.categoryStore.GetCategory(ctx, id)
-	if err != nil {
-		// If the error returned and the cache is updated in connection
-		// with the removal of the category, we use an empty category with the Id
-		if op == "delete" {
-			newCategory = &models.Category{Id: id}
-		} else {
-			return fmt.Errorf("error on get category: %w", err)
-		}
-	}
-	// Get a list of categories from cache
-	categories, err := usecase.categoriesCache.GetCategoriesListCache(ctx, categoriesListKey)
-	if err != nil {
-		return fmt.Errorf("error on get cache: %w", err)
-	}
-	// Change list of categories for update the cache
-	if op == "update" {
-		for i, category := range categories {
-			if category.Id == id {
-				categories[i] = *newCategory
-				break
-			}
-		}
-	}
-	if op == "create" {
-		categories = append(categories, *newCategory)
-	}
-	if op == "delete" {
-		for i, category := range categories {
-			if category.Id == id {
-				categories = append(categories[:i], categories[i+1:]...)
-				break
-			}
-		}
-	}
-	// Sort list of categories by name in alphabetical order
-	sort.Slice(categories, func(i, j int) bool { return categories[i].Name < categories[j].Name })
-	// Create new cache with list of categories
-	err = usecase.categoriesCache.CreateCategoriesListСache(ctx, categories, categoriesListKey)
-	if err != nil {
-		return err
-	}
-	usecase.logger.Info("Category cache update success")
-	return nil
-}
-
-// DeleteCategoryCache deleted cache after deleting categories
-func (usecase *categoryUsecase) DeleteCategoryCache(ctx context.Context, name string) error {
-	usecase.logger.Debug(fmt.Sprintf("Enter in usecase DeleteCategoryCache() with args: ctx, name: %s", name))
-	// keys is a list of cache keys with items in deleted category sorting by name and price
-	keys := []string{name + "nameasc", name + "namedesc", name + "priceasc", name + "pricedesc"}
-	for _, key := range keys {
-		// For each key from list delete cache
-		err := usecase.categoriesCache.DeleteCache(ctx, key)
-		if err != nil {
-			usecase.logger.Error(fmt.Sprintf("error on delete cache with key: %s, error is %v", key, err))
-			return err
-		}
-	}
-	// Delete cache with quantity of items in deleted category
-	err := usecase.categoriesCache.DeleteCache(ctx, name+"Quantity")
-	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on delete cache with key: %s, error is %v", name, err))
-		return err
-	}
-	usecase.logger.Info("Category cache deleted success")
-	return nil
 }

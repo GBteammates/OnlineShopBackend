@@ -1,12 +1,11 @@
 package usecase
 
 import (
+	"OnlineShopBackend/internal/helpers"
 	"OnlineShopBackend/internal/models"
 	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,9 +22,15 @@ const (
 	itemsListKeyPriceAsc  = "ItemsListpriceasc"
 	itemsListKeyPriceDesc = "ItemsListpricedesc"
 	itemsQuantityKey      = "ItemsQuantity"
+	timeout               = 100
+	createOp              = "create"
+	updateOp              = "update"
+	deleteOp              = "delete"
+	quantityKey           = "Quantity"
 )
 
 type itemUsecase struct {
+	validCache  bool
 	itemStore   usecase.ItemStore
 	itemCache   usecase.IItemsCache
 	filestorage usecase.FileStorager
@@ -48,10 +53,15 @@ func (usecase *itemUsecase) CreateItem(ctx context.Context, item *models.Item) (
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create item: %w", err)
 	}
-	err = usecase.UpdateCache(ctx, id, "create")
+
+	item.Id = id
+
+	err = usecase.itemCache.UpdateCache(ctx, item, createOp)
 	if err != nil {
-		usecase.logger.Debug(err.Error())
+		usecase.validCache = false
+		usecase.logger.Sugar().Errorf("error on update cache: %v", err)
 	}
+
 	return id, nil
 }
 
@@ -62,10 +72,12 @@ func (usecase *itemUsecase) UpdateItem(ctx context.Context, item *models.Item) e
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.UpdateCache(ctx, item.Id, "update")
+	err = usecase.itemCache.UpdateCache(ctx, item, updateOp)
 	if err != nil {
-		usecase.logger.Debug(err.Error())
+		usecase.validCache = false
+		usecase.logger.Sugar().Errorf("error on update cache: %v", err)
 	}
+
 	return nil
 }
 
@@ -86,7 +98,7 @@ func (usecase *itemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error 
 	if err != nil {
 		return err
 	}
-	err = usecase.UpdateCache(ctx, id, "delete")
+	err = usecase.itemCache.UpdateCache(ctx, &models.Item{Id: id}, "delete")
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	}
@@ -98,7 +110,7 @@ func (usecase *itemUsecase) DeleteItem(ctx context.Context, id uuid.UUID) error 
 func (usecase *itemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 	usecase.logger.Debug("Enter in usecase ItemsQuantity() with args: ctx")
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
 	if ok := usecase.itemCache.CheckCache(ctxT, itemsQuantityKey); !ok {
@@ -136,9 +148,9 @@ func (usecase *itemUsecase) ItemsQuantity(ctx context.Context) (int, error) {
 // method and write in cache and returns quantity of items in category
 func (usecase *itemUsecase) ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInCategory() with args: ctx, categoryName: %s", categoryName)
-	key := categoryName + "Quantity"
+	key := categoryName + quantityKey
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
 	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
@@ -176,9 +188,9 @@ func (usecase *itemUsecase) ItemsQuantityInCategory(ctx context.Context, categor
 // in cache and returns quantity of items in search request
 func (usecase *itemUsecase) ItemsQuantityInSearch(ctx context.Context, searchRequest string) (int, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsQuantityInSearch() with args: ctx, searchRequest: %s", searchRequest)
-	key := searchRequest + "Quantity"
+	key := searchRequest + quantityKey
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
 	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
@@ -216,7 +228,7 @@ func (usecase *itemUsecase) ItemsQuantityInSearch(ctx context.Context, searchReq
 func (usecase *itemUsecase) ItemsList(ctx context.Context, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error) {
 	usecase.logger.Sugar().Debugf("Enter in usecase ItemsList() with args: ctx, limitOptions: %v, sortOptions: %v", limitOptions, sortOptions)
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
 	sortType, sortOrder := sortOptions["sortType"], sortOptions["sortOrder"]
@@ -232,7 +244,7 @@ func (usecase *itemUsecase) ItemsList(ctx context.Context, limitOptions map[stri
 			items = append(items, item)
 		}
 		// Sort the list of items based on the sorting parameters
-		usecase.SortItems(items, sortType, sortOrder)
+		helpers.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items
 		err = usecase.itemCache.CreateItemsCache(ctxT, items, itemsListKey+sortType+sortOrder)
 		if err != nil {
@@ -263,7 +275,7 @@ func (usecase *itemUsecase) ItemsList(ctx context.Context, limitOptions map[stri
 			dbItems = append(dbItems, item)
 		}
 		// Sort the list of items based on the sorting parameters
-		usecase.SortItems(dbItems, sortType, sortOrder)
+		helpers.SortItems(dbItems, sortType, sortOrder)
 
 		items = dbItems
 	}
@@ -288,7 +300,7 @@ func (usecase *itemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 	usecase.logger.Sugar().Debugf("Enter in usecase GetItemsByCategory() with args: ctx, categoryName: %s, limitOptions: %v, sortOptions: %v", categoryName, limitOptions, sortOptions)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
@@ -307,7 +319,7 @@ func (usecase *itemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 			items = append(items, item)
 		}
 		// Sort the list of items in category based on the sorting parameters
-		usecase.SortItems(items, sortType, sortOrder)
+		helpers.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in category
 		err = usecase.itemCache.CreateItemsCache(ctxT, items, categoryName+sortType+sortOrder)
 		if err != nil {
@@ -337,7 +349,7 @@ func (usecase *itemUsecase) GetItemsByCategory(ctx context.Context, categoryName
 			dbItems = append(dbItems, item)
 		}
 		// Sort the list of items based on the sorting parameters
-		usecase.SortItems(dbItems, sortType, sortOrder)
+		helpers.SortItems(dbItems, sortType, sortOrder)
 		items = dbItems
 	}
 	if offset > len(items) {
@@ -361,7 +373,7 @@ func (usecase *itemUsecase) SearchLine(ctx context.Context, param string, limitO
 	usecase.logger.Sugar().Debugf("Enter in usecase SearchLine() with args: ctx, param: %s, limitOptions: %v, sortOptions: %v", param, limitOptions, sortOptions)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
@@ -387,7 +399,7 @@ func (usecase *itemUsecase) SearchLine(ctx context.Context, param string, limitO
 			usecase.logger.Info("Items quantity cache create success")
 		}
 		// Sort the list of items in search request based on the sorting parameters
-		usecase.SortItems(items, sortType, sortOrder)
+		helpers.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in search request
 		err = usecase.itemCache.CreateItemsCache(ctxT, items, param+sortType+sortOrder)
 		if err != nil {
@@ -410,7 +422,7 @@ func (usecase *itemUsecase) SearchLine(ctx context.Context, param string, limitO
 			dbItems = append(dbItems, item)
 		}
 		// Sort the list of items based on the sorting parameters
-		usecase.SortItems(dbItems, sortType, sortOrder)
+		helpers.SortItems(dbItems, sortType, sortOrder)
 		items = dbItems
 	}
 	if offset > len(items) {
@@ -427,190 +439,4 @@ func (usecase *itemUsecase) SearchLine(ctx context.Context, param string, limitO
 		counter++
 	}
 	return itemsWithLimit, nil
-}
-
-// UpdateCache updating cache when creating or updating item
-func (usecase *itemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
-	usecase.logger.Sugar().Debugf("Enter in itemUsecase UpdateCache() with args: ctx, id: %v, op: %s", id, op)
-	// Check the presence of a cache with all possible keys
-	if !usecase.itemCache.CheckCache(ctx, itemsListKeyNameAsc) &&
-		!usecase.itemCache.CheckCache(ctx, itemsListKeyNameDesc) &&
-		!usecase.itemCache.CheckCache(ctx, itemsListKeyPriceAsc) &&
-		!usecase.itemCache.CheckCache(ctx, itemsListKeyPriceDesc) {
-		// If the cache with any of the keys does not return the error
-		return fmt.Errorf("cache is not exists")
-	}
-	newItem := &models.Item{}
-	cacheKeys := []string{itemsListKeyNameAsc, itemsListKeyNameDesc, itemsListKeyPriceAsc, itemsListKeyPriceDesc}
-	// Sort through all possible keys
-	for _, key := range cacheKeys {
-		// For each key get a cache
-		items, err := usecase.itemCache.GetItemsCache(ctx, key)
-		if err != nil {
-			return fmt.Errorf("error on get cache: %w", err)
-		}
-		// If the renewal of the cache is associated with
-		// removal of item, we use
-		// empty item with ID from parameters
-		// method
-		if op == "delete" {
-			newItem.Id = id
-		} else {
-			// Otherwise, we get item from the database
-			newItem, err = usecase.itemStore.GetItem(ctx, id)
-			if err != nil {
-				usecase.logger.Sugar().Errorf("error on get item: %v", err)
-				return err
-			}
-		}
-		// Сhange the list of items in accordance with the operation
-		if op == "update" {
-			for i, item := range items {
-				if item.Id == newItem.Id {
-					items[i] = *newItem
-					break
-				}
-			}
-		}
-		if op == "create" {
-			items = append(items, *newItem)
-			err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), itemsQuantityKey)
-			if err != nil {
-				return fmt.Errorf("error on create items quantity cache: %w", err)
-			}
-		}
-		if op == "delete" {
-			for i, item := range items {
-				if item.Id == newItem.Id {
-					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), itemsQuantityKey)
-					if err != nil {
-						return fmt.Errorf("error on create items quantity cache: %w", err)
-					}
-					break
-				}
-			}
-		}
-
-		// Sort the list of items
-		switch {
-		case key == itemsListKeyNameAsc:
-			usecase.SortItems(items, "name", "asc")
-		case key == itemsListKeyNameDesc:
-			usecase.SortItems(items, "name", "desc")
-		case key == itemsListKeyPriceAsc:
-			usecase.SortItems(items, "price", "asc")
-		case key == itemsListKeyPriceDesc:
-			usecase.SortItems(items, "price", "desc")
-		}
-		// Record the updated cache
-		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
-		if err != nil {
-			return err
-		}
-		usecase.logger.Sugar().Infof("Cache of items list with key: %s update success", key)
-	}
-	// Update the cache of the item list in the category
-	err := usecase.UpdateItemsInCategoryCache(ctx, newItem, op)
-	if err != nil {
-		usecase.logger.Error(err.Error())
-	}
-	return nil
-}
-
-// UpdateItemsInCategoryCache update cache items from category
-func (usecase *itemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error {
-	usecase.logger.Debug(fmt.Sprintf("Enter in usecase UpdateItemsInCategoryCache() with args: ctx, newItem: %v, op: %s", newItem, op))
-	categoryItemsKeyNameAsc := newItem.Category.Name + "nameasc"
-	categoryItemsKeyNameDesc := newItem.Category.Name + "namedesc"
-	categoryItemsKeyPriceAsc := newItem.Category.Name + "priceasc"
-	categoryItemsKeyPriceDesc := newItem.Category.Name + "pricedesc"
-	categoryItemsQuantityKey := newItem.Category.Name + "Quantity"
-
-	keys := []string{categoryItemsKeyNameAsc, categoryItemsKeyNameDesc, categoryItemsKeyPriceAsc, categoryItemsKeyPriceDesc}
-	// Check the presence of a cache with all possible keys
-	if !usecase.itemCache.CheckCache(ctx, categoryItemsKeyNameAsc) &&
-		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyNameDesc) &&
-		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyPriceAsc) &&
-		!usecase.itemCache.CheckCache(ctx, categoryItemsKeyPriceDesc) {
-		// If the cache with any of the keys does not return the error
-		return fmt.Errorf("cache is not exist")
-	}
-	// Sort through all possible keys
-	for _, key := range keys {
-		// For each key get a cache
-		items, err := usecase.itemCache.GetItemsCache(ctx, key)
-		if err != nil {
-			return fmt.Errorf("error on get cache: %w", err)
-		}
-		// Сhange the list of items in accordance with the operation
-		if op == "update" {
-			for i, item := range items {
-				if item.Id == newItem.Id {
-					items[i] = *newItem
-					break
-				}
-			}
-		}
-		if op == "create" {
-			items = append(items, *newItem)
-			err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), categoryItemsQuantityKey)
-			if err != nil {
-				return fmt.Errorf("error on create items quantity cache: %w", err)
-			}
-		}
-		if op == "delete" {
-			for i, item := range items {
-				if item.Id == newItem.Id {
-					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), categoryItemsQuantityKey)
-					if err != nil {
-						return fmt.Errorf("error on create items quantity cache: %w", err)
-					}
-					break
-				}
-			}
-		}
-		// Sort the list of items
-		switch {
-		case key == categoryItemsKeyNameAsc:
-			usecase.SortItems(items, "name", "asc")
-		case key == categoryItemsKeyNameDesc:
-			usecase.SortItems(items, "name", "desc")
-		case key == categoryItemsKeyPriceAsc:
-			usecase.SortItems(items, "price", "asc")
-		case key == categoryItemsKeyPriceDesc:
-			usecase.SortItems(items, "price", "desc")
-		}
-		// Record the updated cache
-		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
-		if err != nil {
-			return err
-		}
-	}
-	usecase.logger.Info("Update category list cache success")
-	return nil
-}
-
-// SortItems sorts list of items by sort parameters
-func (usecase *itemUsecase) SortItems(items []models.Item, sortType string, sortOrder string) {
-	usecase.logger.Sugar().Debugf("Enter in usecase SortItems() with args: items []models.Item, sortType: %s, sortOrder: %s", sortType, sortOrder)
-	sortType = strings.ToLower(sortType)
-	sortOrder = strings.ToLower(sortOrder)
-	switch {
-	case sortType == "name" && sortOrder == "asc":
-		sort.Slice(items, func(i, j int) bool { return items[i].Title < items[j].Title })
-		return
-	case sortType == "name" && sortOrder == "desc":
-		sort.Slice(items, func(i, j int) bool { return items[i].Title > items[j].Title })
-		return
-	case sortType == "price" && sortOrder == "asc":
-		sort.Slice(items, func(i, j int) bool { return items[i].Price < items[j].Price })
-		return
-	case sortType == "price" && sortOrder == "desc":
-		sort.Slice(items, func(i, j int) bool { return items[i].Price > items[j].Price })
-		return
-	default:
-		usecase.logger.Sugar().Errorf("unknown type of sort: %v", sortType)
-	}
 }

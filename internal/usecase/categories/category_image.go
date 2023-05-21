@@ -29,7 +29,7 @@ func (usecase *categoryUsecase) UploadCategoryImage(ctx context.Context, id uuid
 		return fmt.Errorf("error on update category: %w", err)
 	}
 
-	err = usecase.UpdateCache(ctx, category.Id, "update")
+	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, updateOp)
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
@@ -58,7 +58,7 @@ func (usecase *categoryUsecase) DeleteCategoryImage(ctx context.Context, id uuid
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
 	}
-	err = usecase.UpdateCache(ctx, category.Id, "update")
+	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, updateOp)
 	if err != nil {
 		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {

@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"OnlineShopBackend/internal/helpers"
 	"OnlineShopBackend/internal/models"
 	"context"
 	"errors"
@@ -10,6 +11,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	addOp = "add"
+)
+
 // AddFavouriteItem added item in list of favourites items
 func (usecase *itemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error {
 	usecase.logger.Sugar().Debugf("Enter in usecase AddFavouriteItem() with args: ctx, userId: %v, itemId: %v", userId, itemId)
@@ -17,8 +22,12 @@ func (usecase *itemUsecase) AddFavouriteItem(ctx context.Context, userId uuid.UU
 	if err != nil {
 		return err
 	}
-	usecase.UpdateFavouriteItemsCache(ctx, userId, itemId, "add")
-	usecase.UpdateFavIdsCache(ctx, userId, itemId, "add")
+	item, err := usecase.GetItem(ctx, itemId)
+	if err != nil {
+		usecase.logger.Sugar().Errorf("error on get item: %v", err)
+		return err
+	}
+	usecase.itemCache.UpdateFavouritesCache(ctx, userId, item, addOp)
 	return nil
 }
 
@@ -29,8 +38,7 @@ func (usecase *itemUsecase) DeleteFavouriteItem(ctx context.Context, userId uuid
 	if err != nil {
 		return err
 	}
-	usecase.UpdateFavouriteItemsCache(ctx, userId, itemId, "delete")
-	usecase.UpdateFavIdsCache(ctx, userId, itemId, "delete")
+	usecase.itemCache.UpdateFavouritesCache(ctx, userId, &models.Item{Id: itemId}, deleteOp)
 	return nil
 }
 
@@ -40,7 +48,7 @@ func (usecase *itemUsecase) ItemsQuantityInFavourite(ctx context.Context, userId
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteQuantity() with args: ctx, userId: %v", userId)
 	key := userId.String() + "Quantity"
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 	// Сheck the existence of a cache with the quantity of items
 	if ok := usecase.itemCache.CheckCache(ctxT, key); !ok {
@@ -79,7 +87,7 @@ func (usecase *itemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteItems() with args: ctx, userId: %v", userId)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	limit, offset := limitOptions["limit"], limitOptions["offset"]
@@ -98,7 +106,7 @@ func (usecase *itemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 		}
 		// Sort the list of items in favourites
 		// based on the sorting parameters
-		usecase.SortItems(items, sortType, sortOrder)
+		helpers.SortItems(items, sortType, sortOrder)
 		// Create a cache with a sorted list of items in favourites
 		err = usecase.itemCache.CreateItemsCache(ctxT, items, userId.String()+sortType+sortOrder)
 		if err != nil {
@@ -128,7 +136,7 @@ func (usecase *itemUsecase) GetFavouriteItems(ctx context.Context, userId uuid.U
 			dbItems = append(dbItems, item)
 		}
 		// Sort the list of items based on the sorting parameters
-		usecase.SortItems(dbItems, sortType, sortOrder)
+		helpers.SortItems(dbItems, sortType, sortOrder)
 		items = dbItems
 	}
 	if offset > len(items) {
@@ -152,7 +160,7 @@ func (usecase *itemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 	usecase.logger.Sugar().Debugf("Enter in usecase GetFavouriteItemsId() with args: ctx, userId: %v", userId)
 
 	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+	ctxT, cancel := context.WithTimeout(ctx, timeout*time.Millisecond)
 	defer cancel()
 
 	// Check whether there is a cache of identificators of favourite items
@@ -200,122 +208,4 @@ func (usecase *itemUsecase) GetFavouriteItemsId(ctx context.Context, userId uuid
 		favUids = dbFavUids
 	}
 	return favUids, nil
-}
-
-func (usecase *itemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userId uuid.UUID, itemId uuid.UUID, op string) {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavouriteItemsCache() with args: ctx, userId: %v, itemId: %v, op: %s", userId, itemId, op)
-	favouriteItemsKeyNameAsc := userId.String() + "nameasc"
-	favouriteItemsKeyNameDesc := userId.String() + "namedesc"
-	favouriteItemsKeyPriceAsc := userId.String() + "priceasc"
-	favouriteItemsKeyPriceDesc := userId.String() + "pricedesc"
-	favouriteItemsQuantityKey := userId.String() + "Quantity"
-
-	keys := []string{favouriteItemsKeyNameAsc, favouriteItemsKeyNameDesc, favouriteItemsKeyPriceAsc, favouriteItemsKeyPriceDesc}
-	// Check the presence of a cache with all possible keys
-	if !usecase.itemCache.CheckCache(ctx, favouriteItemsKeyNameAsc) &&
-		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyNameDesc) &&
-		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyPriceAsc) &&
-		!usecase.itemCache.CheckCache(ctx, favouriteItemsKeyPriceDesc) {
-		// If the cache with any of the keys does not return the error
-		usecase.logger.Error("cache is not exist")
-		return
-	}
-	// Sort through all possible keys
-	for _, key := range keys {
-		// For each key get a cache
-		items, err := usecase.itemCache.GetItemsCache(ctx, key)
-		if err != nil {
-			usecase.logger.Sugar().Errorf("error on get cache: %v", err)
-			return
-		}
-		// Сhange the list of items in accordance with the operation
-		if op == "add" {
-			item, err := usecase.itemStore.GetItem(ctx, itemId)
-			if err != nil {
-				usecase.logger.Sugar().Errorf("error on get item: %v", err)
-				return
-			}
-			items = append(items, *item)
-			err = usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), favouriteItemsQuantityKey)
-			if err != nil {
-				usecase.logger.Sugar().Errorf("error on create items quantity cache: %w", err)
-				return
-			}
-		}
-		if op == "delete" {
-			for i, item := range items {
-				if item.Id == itemId {
-					items = append(items[:i], items[i+1:]...)
-					err := usecase.itemCache.CreateItemsQuantityCache(ctx, len(items), favouriteItemsQuantityKey)
-					if err != nil {
-						usecase.logger.Sugar().Errorf("error on create items quantity cache: %w", err)
-						return
-					}
-					break
-				}
-			}
-		}
-		// Sort the list of items
-		switch {
-		case key == favouriteItemsKeyNameAsc:
-			usecase.SortItems(items, "name", "asc")
-		case key == favouriteItemsKeyNameDesc:
-			usecase.SortItems(items, "name", "desc")
-		case key == favouriteItemsKeyPriceAsc:
-			usecase.SortItems(items, "price", "asc")
-		case key == favouriteItemsKeyPriceDesc:
-			usecase.SortItems(items, "price", "desc")
-		}
-		// Record the updated cache
-		err = usecase.itemCache.CreateItemsCache(ctx, items, key)
-		if err != nil {
-			usecase.logger.Sugar().Errorf("error on create favourite items cache: %v", err)
-			return
-		}
-	}
-	usecase.logger.Info("Update favourite items list cache success")
-}
-
-// UpdateFavIdsCache updates cache with favourite items identificators
-func (usecase *itemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateFavIdsCache() with args userId: %v, itemId: %v", userId, itemId)
-	// Check the presence of a cache with key
-	if !usecase.itemCache.CheckCache(ctx, userId.String()+"Fav") {
-		// If cache doesn't exists create it
-		favMap := make(map[uuid.UUID]uuid.UUID)
-		// Add itemId in map of favourite
-		// item's identificators
-		favMap[itemId] = userId
-
-		// Record the cache with favourite items identificators
-		err := usecase.itemCache.CreateFavouriteItemsIdCache(ctx, favMap, userId.String()+"Fav")
-		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create favourite items id cache: %v", err)
-			return
-		}
-		usecase.logger.Info("create favourite items id cache success")
-		return
-	}
-	// If cache exists get it
-	favMapLink, err := usecase.itemCache.GetFavouriteItemsIdCache(ctx, userId.String()+"Fav")
-	if err != nil {
-		usecase.logger.Sugar().Warn("error on get favourite items id cache with key: %v, err: %v", userId.String()+"Fav", err)
-		return
-	}
-	// Сhange the map of favourite items identificators
-	// in accordance with the operation
-	favMap := *favMapLink
-	if op == "add" {
-		favMap[itemId] = userId
-	}
-	if op == "delete" {
-		delete(favMap, itemId)
-	}
-	// Record the updated cache
-	err = usecase.itemCache.CreateFavouriteItemsIdCache(ctx, favMap, userId.String()+"Fav")
-	if err != nil {
-		usecase.logger.Sugar().Warn("error on create favourite items id cache: %v", err)
-		return
-	}
-	usecase.logger.Info("Create favourite items id cache success")
 }

@@ -15,11 +15,14 @@ type IItemsCache interface {
 	GetItemsQuantityCache(ctx context.Context, key string) (int, error)
 	CreateFavouriteItemsIdCache(ctx context.Context, res map[uuid.UUID]uuid.UUID, key string) error
 	GetFavouriteItemsIdCache(ctx context.Context, key string) (*map[uuid.UUID]uuid.UUID, error)
+	UpdateCache(ctx context.Context, newItem *models.Item, op string) error
+	UpdateFavouritesCache(ctx context.Context, userId uuid.UUID, item *models.Item, op string) error
 }
 
 type ICategoriesCache interface {
 	CheckCache(ctx context.Context, key string) bool
 	CreateCategoriesListСache(ctx context.Context, categories []models.Category, key string) error
 	GetCategoriesListCache(ctx context.Context, key string) ([]models.Category, error)
-	DeleteCache(ctx context.Context, key string) error
+	UpdateCategoryCache(ctx context.Context, newCategory *models.Category, op string) error
+	DeleteCategoryCache(ctx context.Context, name string) error
 }
