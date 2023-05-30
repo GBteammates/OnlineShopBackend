@@ -11,18 +11,18 @@ type ItemStore interface {
 	CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error)
 	UpdateItem(ctx context.Context, item *models.Item) error
 	GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error)
-	ItemsList(ctx context.Context) (chan models.Item, error)
+	ItemsList(ctx context.Context, param string) (chan models.Item, error)
 	SearchLine(ctx context.Context, param string) (chan models.Item, error)
-	GetItemsByCategory(ctx context.Context, categoryName string) (chan models.Item, error)
+	GetItemsByCategory(ctx context.Context, param string) (chan models.Item, error)
 	DeleteItem(ctx context.Context, id uuid.UUID) error
 	AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
 	DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
-	GetFavouriteItems(ctx context.Context, userId uuid.UUID) (chan models.Item, error)
+	GetFavouriteItems(ctx context.Context, userId string) (chan models.Item, error)
 	GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)
-	ItemsListQuantity(ctx context.Context) (int, error)
-	ItemsByCategoryQuantity(ctx context.Context, categoryName string) (int, error)
-	ItemsInSearchQuantity(ctx context.Context, searchRequest string) (int, error)
-	ItemsInFavouriteQuantity(ctx context.Context, userId uuid.UUID) (int, error)
+	ItemsListQuantity(ctx context.Context, param string) (int, error)
+	ItemsByCategoryQuantity(ctx context.Context, param string) (int, error)
+	ItemsInSearchQuantity(ctx context.Context, param string) (int, error)
+	ItemsInFavouriteQuantity(ctx context.Context, userId string) (int, error)
 }
 
 type CategoryStore interface {

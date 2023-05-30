@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"OnlineShopBackend/internal/models"
-	"OnlineShopBackend/internal/usecase/interfaces"
+	usecase "OnlineShopBackend/internal/usecase/interfaces"
 	"context"
 	"fmt"
 	"strings"
@@ -173,7 +173,7 @@ func (repo *itemRepo) GetItem(ctx context.Context, id uuid.UUID) (*models.Item, 
 
 // ItemsList reads all the items from the database and writes it to the
 // output channel and returns this channel or error
-func (repo *itemRepo) ItemsList(ctx context.Context) (chan models.Item, error) {
+func (repo *itemRepo) ItemsList(ctx context.Context, param string) (chan models.Item, error) {
 	repo.logger.Debug("Enter in repository ItemsList() with args: ctx")
 	itemChan := make(chan models.Item, 100)
 	go func() {
@@ -290,8 +290,8 @@ func (repo *itemRepo) SearchLine(ctx context.Context, param string) (chan models
 }
 
 // GetItemsByCategory finds in the database all the items with a certain name of the category and writes them in the outgoing channel
-func (repo *itemRepo) GetItemsByCategory(ctx context.Context, categoryName string) (chan models.Item, error) {
-	repo.logger.Debugf("Enter in repository GetItemsByCategory() with args: ctx, categoryName: %s", categoryName)
+func (repo *itemRepo) GetItemsByCategory(ctx context.Context, param string) (chan models.Item, error) {
+	repo.logger.Debugf("Enter in repository GetItemsByCategory() with args: ctx, param: %s", param)
 	itemChan := make(chan models.Item, 100)
 	go func() {
 		defer close(itemChan)
@@ -312,7 +312,7 @@ func (repo *itemRepo) GetItemsByCategory(ctx context.Context, categoryName strin
 		WHERE items.deleted_at is null 
 		AND categories.deleted_at is null 
 		AND categories.name=$1
-		`, categoryName)
+		`, param)
 		if err != nil {
 			msg := fmt.Errorf("error on get items by category query context: %w", err)
 			repo.logger.Error(msg.Error())
@@ -414,7 +414,7 @@ func (repo *itemRepo) DeleteFavouriteItem(ctx context.Context, userId uuid.UUID,
 
 // GetItemsFavouriteItems finds in the database all the items in list of favourites for current user
 // and writes them in the output channel
-func (repo *itemRepo) GetFavouriteItems(ctx context.Context, userId uuid.UUID) (chan models.Item, error) {
+func (repo *itemRepo) GetFavouriteItems(ctx context.Context, userId string) (chan models.Item, error) {
 	repo.logger.Debug("Enter in repository GetFavouriteItems() with args: ctx, userId: %v", userId)
 
 	itemChan := make(chan models.Item, 100)
@@ -503,7 +503,7 @@ func (repo *itemRepo) GetFavouriteItemsId(ctx context.Context, userId uuid.UUID)
 }
 
 // ItemsListQuantity returns quantity of all items or error
-func (repo *itemRepo) ItemsListQuantity(ctx context.Context) (int, error) {
+func (repo *itemRepo) ItemsListQuantity(ctx context.Context, param string) (int, error) {
 	repo.logger.Debug("Enter in repository ItemsListQuantity() with args: ctx")
 	pool := repo.storage.GetPool()
 	var quantity int
@@ -518,8 +518,8 @@ func (repo *itemRepo) ItemsListQuantity(ctx context.Context) (int, error) {
 }
 
 // ItemsByCategoryQuantity returns quntity of items in category or error
-func (repo *itemRepo) ItemsByCategoryQuantity(ctx context.Context, categoryName string) (int, error) {
-	repo.logger.Debug("Enter in repository ItemsByCategoryQuantity() with args: ctx, categoryName: %s", categoryName)
+func (repo *itemRepo) ItemsByCategoryQuantity(ctx context.Context, param string) (int, error) {
+	repo.logger.Debug("Enter in repository ItemsByCategoryQuantity() with args: ctx, categoryName: %s", param)
 	pool := repo.storage.GetPool()
 	var quantity int
 	row := pool.QueryRow(ctx, `
@@ -528,7 +528,7 @@ func (repo *itemRepo) ItemsByCategoryQuantity(ctx context.Context, categoryName 
 	WHERE items.deleted_at is null 
 	AND categories.deleted_at is null 
 	AND categories.name=$1
-	`, categoryName)
+	`, param)
 	err := row.Scan(&quantity)
 	if err != nil {
 		repo.logger.Errorf("Error in row.Scan items by category quantity: %s", err)
@@ -539,8 +539,8 @@ func (repo *itemRepo) ItemsByCategoryQuantity(ctx context.Context, categoryName 
 }
 
 // ItemsInSearchQuantity returns quantity of items in search results or error
-func (repo *itemRepo) ItemsInSearchQuantity(ctx context.Context, searchRequest string) (int, error) {
-	repo.logger.Debug("Enter in repository ItemsInSearchQuantity() with args: ctx, searchRequest: %s", searchRequest)
+func (repo *itemRepo) ItemsInSearchQuantity(ctx context.Context, param string) (int, error) {
+	repo.logger.Debug("Enter in repository ItemsInSearchQuantity() with args: ctx, searchRequest: %s", param)
 	pool := repo.storage.GetPool()
 	var quantity int
 	row := pool.QueryRow(ctx, `
@@ -554,7 +554,7 @@ func (repo *itemRepo) ItemsInSearchQuantity(ctx context.Context, searchRequest s
 		OR items.description ilike $1 
 		OR vendor ilike $1 
 		OR categories.name ilike $1
-		`, "%"+searchRequest+"%")
+		`, "%"+param+"%")
 	err := row.Scan(&quantity)
 	if err != nil {
 		repo.logger.Errorf("Error in row.Scan items in search quantity: %s", err)
@@ -565,7 +565,7 @@ func (repo *itemRepo) ItemsInSearchQuantity(ctx context.Context, searchRequest s
 }
 
 // ItemsInFavouriteQuantity returns quantity or favourite items by user id or error
-func (repo *itemRepo) ItemsInFavouriteQuantity(ctx context.Context, userId uuid.UUID) (int, error) {
+func (repo *itemRepo) ItemsInFavouriteQuantity(ctx context.Context, userId string) (int, error) {
 	repo.logger.Debug("Enter in repository ItemsInFavouriteQuantity() with args: ctx, userId uuid.UUID: %v", userId)
 	pool := repo.storage.GetPool()
 	var quantity int

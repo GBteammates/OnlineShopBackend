@@ -36,7 +36,11 @@ func (usecase *itemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.itemCache.UpdateCache(ctx, item, updateOp)
+	err = usecase.itemCache.UpdateCache(ctx, &models.ItemsCacheOptions{
+		Op:      updateOp,
+		Kind:    []string{list, inCategory},
+		NewItem: item,
+	})
 	if err != nil {
 		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}
@@ -73,7 +77,11 @@ func (usecase *itemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.itemCache.UpdateCache(ctx, item, "update")
+	err = usecase.itemCache.UpdateCache(ctx, &models.ItemsCacheOptions{
+		Op:      updateOp,
+		Kind:    []string{list, inCategory},
+		NewItem: item,
+	})
 	if err != nil {
 		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
 	}

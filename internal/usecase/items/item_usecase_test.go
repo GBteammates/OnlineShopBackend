@@ -85,19 +85,23 @@ func TestCreateItem(t *testing.T) {
 	usecase := NewItemUsecase(itemRepo, cache, filestorage, logger)
 	ctx := context.Background()
 
-	itemRepo.EXPECT().CreateItem(ctx, &testModelItem).Return(uuid.Nil, err)
-	res, err := usecase.CreateItem(ctx, &testModelItem)
-	require.Error(t, err)
-	require.Equal(t, res, uuid.Nil)
-
-	itemRepo.EXPECT().CreateItem(ctx, &testModelItem).Return(testId, nil)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyNameAsc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyNameDesc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyPriceAsc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyPriceDesc).Return(false)
-	res, err = usecase.CreateItem(ctx, &testModelItem)
-	require.NoError(t, err)
-	require.Equal(t, res, testId)
+	t.Run("error on create item in storage", func(t *testing.T) {
+		item := &models.Item{}
+		itemRepo.EXPECT().CreateItem(ctx, item).Return(uuid.Nil, fmt.Errorf("error"))
+		res, err := usecase.CreateItem(ctx, item)
+		require.Error(t, err)
+		require.Equal(t, res, uuid.Nil)
+	})
+	t.Run("error on update cache", func(t *testing.T) {
+		item := &models.Item{}
+		id := uuid.New()
+		itemRepo.EXPECT().CreateItem(ctx, item).Return(id, nil)
+		item.Id = id
+		cache.EXPECT().UpdateCache(ctx, item, createOp).Return(fmt.Errorf("error"))
+		res, err := usecase.CreateItem(ctx, item)
+		require.NoError(t, err)
+		require.Equal(t, item, res)
+	})
 }
 
 func TestUpdateItem(t *testing.T) {
@@ -109,18 +113,19 @@ func TestUpdateItem(t *testing.T) {
 	filestorage := mocks.NewMockFileStorager(ctrl)
 	usecase := NewItemUsecase(itemRepo, cache, filestorage, logger)
 	ctx := context.Background()
+	item := &models.Item{}
 
-	itemRepo.EXPECT().UpdateItem(ctx, &testModelItem).Return(err)
-	err := usecase.UpdateItem(ctx, &testModelItem)
-	require.Error(t, err)
-
-	itemRepo.EXPECT().UpdateItem(ctx, &testModelItem).Return(nil)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyNameAsc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyNameDesc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyPriceAsc).Return(false)
-	cache.EXPECT().CheckCache(ctx, itemsListKeyPriceDesc).Return(false)
-	err = usecase.UpdateItem(ctx, &testModelItem)
-	require.NoError(t, err)
+	t.Run("error on update item in storage", func(t *testing.T) {
+		itemRepo.EXPECT().UpdateItem(ctx, item).Return(fmt.Errorf("error"))
+		err := usecase.UpdateItem(ctx, item)
+		require.Error(t, err)
+	})
+	t.Run("success update item with error on update cache", func(t *testing.T) {
+		itemRepo.EXPECT().UpdateItem(ctx, item).Return(nil)
+		cache.EXPECT().UpdateCache(ctx, item, updateOp).Return(fmt.Errorf("error"))
+		err := usecase.UpdateItem(ctx, item)
+		require.NoError(t, err)
+	})
 }
 
 func TestGetItem(t *testing.T) {

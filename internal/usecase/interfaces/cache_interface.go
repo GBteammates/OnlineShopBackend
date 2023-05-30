@@ -8,15 +8,14 @@ import (
 )
 
 type IItemsCache interface {
-	CheckCache(ctx context.Context, key string) bool
-	CreateItemsCache(ctx context.Context, res []models.Item, key string) error
-	CreateItemsQuantityCache(ctx context.Context, value int, key string) error
-	GetItemsCache(ctx context.Context, key string) ([]models.Item, error)
-	GetItemsQuantityCache(ctx context.Context, key string) (int, error)
-	CreateFavouriteItemsIdCache(ctx context.Context, res map[uuid.UUID]uuid.UUID, key string) error
-	GetFavouriteItemsIdCache(ctx context.Context, key string) (*map[uuid.UUID]uuid.UUID, error)
-	UpdateCache(ctx context.Context, newItem *models.Item, op string) error
-	UpdateFavouritesCache(ctx context.Context, userId uuid.UUID, item *models.Item, op string) error
+	ItemsToCache(ctx context.Context, items []models.Item, kind, param string) error
+	ItemsFromCache(ctx context.Context, cacheKey, kind string) ([]models.Item, error)
+	ItemsQuantityToCache(ctx context.Context, value int, key, kind string) error
+	ItemsQuantityFromCache(ctx context.Context, key string, kind string) (int, error)
+	FavouriteItemsIdsToCache(ctx context.Context, favIds *map[uuid.UUID]uuid.UUID, key, kind string) error
+	FavouriteItemsIdsFromCache(ctx context.Context, key, kind string) (*map[uuid.UUID]uuid.UUID, error)
+	UpdateCache(ctx context.Context, opts *models.ItemsCacheOptions) error
+	UpdateFavIdsCache(ctx context.Context, userId uuid.UUID, item *models.Item, op string) error
 }
 
 type ICategoriesCache interface {
@@ -25,4 +24,5 @@ type ICategoriesCache interface {
 	GetCategoriesListCache(ctx context.Context, key string) ([]models.Category, error)
 	UpdateCategoryCache(ctx context.Context, newCategory *models.Category, op string) error
 	DeleteCategoryCache(ctx context.Context, name string) error
+	Status(ctx context.Context) bool
 }

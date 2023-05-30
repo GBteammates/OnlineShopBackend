@@ -67,6 +67,7 @@ func (cache *categoriesСache) CreateCategoriesListСache(ctx context.Context, c
 	err = cache.Set(ctx, key, bytesData, cache.TTL).Err()
 	if err != nil {
 		cache.logger.Sugar().Warnf("Error on set cache with key: %s, error: %v", key, err)
+		cache.cacheValid = false
 		return fmt.Errorf("error on set cache with key: %v, error: %w", key, err)
 	}
 	cache.logger.Debug(fmt.Sprintf("cache with key %s write in redis success", key))
@@ -100,6 +101,7 @@ func (cache *categoriesСache) deleteCache(ctx context.Context, key string) erro
 	cache.logger.Debug(fmt.Sprintf("Enter in cache DeleteCache with args: ctx, key: %s", key))
 	err := cache.Del(ctx, key).Err()
 	if err != nil {
+		cache.cacheValid = false
 		cache.logger.Sugar().Warnf("Error on delete cache with key: %s", key)
 		return err
 	}
@@ -172,4 +174,9 @@ func (cache *categoriesСache) DeleteCategoryCache(ctx context.Context, name str
 	}
 	cache.logger.Info("Category cache deleted success")
 	return nil
+}
+
+func (cache *categoriesСache) Status(ctx context.Context) bool {
+	cache.logger.Debug("Enter in cache Status()")
+	return cache.cacheValid
 }

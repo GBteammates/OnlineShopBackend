@@ -11,15 +11,15 @@ type IItemUsecase interface {
 	CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error)
 	UpdateItem(ctx context.Context, item *models.Item) error
 	GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error)
-	ItemsList(ctx context.Context, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
+	ItemsList(ctx context.Context, opts *models.ItemsListOptions) ([]models.Item, error)
 	ItemsQuantity(ctx context.Context) (int, error)
 	ItemsQuantityInCategory(ctx context.Context, categoryName string) (int, error)
-	SearchLine(ctx context.Context, param string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
-	GetItemsByCategory(ctx context.Context, categoryName string, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
+	SearchLine(ctx context.Context, param string, opts *models.ItemsListOptions) ([]models.Item, error)
+	GetItemsByCategory(ctx context.Context, categoryName string, opts *models.ItemsListOptions) ([]models.Item, error)
 	DeleteItem(ctx context.Context, id uuid.UUID) error
 	AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
 	DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
-	GetFavouriteItems(ctx context.Context, userId uuid.UUID, limitOptions map[string]int, sortOptions map[string]string) ([]models.Item, error)
+	GetFavouriteItems(ctx context.Context, userId uuid.UUID, opts *models.ItemsListOptions) ([]models.Item, error)
 	ItemsQuantityInFavourite(ctx context.Context, userId uuid.UUID) (int, error)
 	ItemsQuantityInSearch(ctx context.Context, search string) (int, error)
 	GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)

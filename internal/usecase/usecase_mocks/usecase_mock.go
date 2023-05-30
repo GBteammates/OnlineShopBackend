@@ -286,56 +286,6 @@ func (mr *MockIItemUsecaseMockRecorder) SearchLine(ctx, param, limitOptions, sor
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SearchLine", reflect.TypeOf((*MockIItemUsecase)(nil).SearchLine), ctx, param, limitOptions, sortOptions)
 }
 
-// SortItems mocks base method.
-func (m *MockIItemUsecase) SortItems(items []models.Item, sortType, sortOrder string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SortItems", items, sortType, sortOrder)
-}
-
-// SortItems indicates an expected call of SortItems.
-func (mr *MockIItemUsecaseMockRecorder) SortItems(items, sortType, sortOrder interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SortItems", reflect.TypeOf((*MockIItemUsecase)(nil).SortItems), items, sortType, sortOrder)
-}
-
-// UpdateCache mocks base method.
-func (m *MockIItemUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCache", ctx, id, op)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateCache indicates an expected call of UpdateCache.
-func (mr *MockIItemUsecaseMockRecorder) UpdateCache(ctx, id, op interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCache", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateCache), ctx, id, op)
-}
-
-// UpdateFavIdsCache mocks base method.
-func (m *MockIItemUsecase) UpdateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateFavIdsCache", ctx, userId, itemId, op)
-}
-
-// UpdateFavIdsCache indicates an expected call of UpdateFavIdsCache.
-func (mr *MockIItemUsecaseMockRecorder) UpdateFavIdsCache(ctx, userId, itemId, op interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFavIdsCache", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateFavIdsCache), ctx, userId, itemId, op)
-}
-
-// UpdateFavouriteItemsCache mocks base method.
-func (m *MockIItemUsecase) UpdateFavouriteItemsCache(ctx context.Context, userId, itemId uuid.UUID, op string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateFavouriteItemsCache", ctx, userId, itemId, op)
-}
-
-// UpdateFavouriteItemsCache indicates an expected call of UpdateFavouriteItemsCache.
-func (mr *MockIItemUsecaseMockRecorder) UpdateFavouriteItemsCache(ctx, userId, itemId, op interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateFavouriteItemsCache", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateFavouriteItemsCache), ctx, userId, itemId, op)
-}
-
 // UpdateItem mocks base method.
 func (m *MockIItemUsecase) UpdateItem(ctx context.Context, item *models.Item) error {
 	m.ctrl.T.Helper()
@@ -348,20 +298,6 @@ func (m *MockIItemUsecase) UpdateItem(ctx context.Context, item *models.Item) er
 func (mr *MockIItemUsecaseMockRecorder) UpdateItem(ctx, item interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateItem", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateItem), ctx, item)
-}
-
-// UpdateItemsInCategoryCache mocks base method.
-func (m *MockIItemUsecase) UpdateItemsInCategoryCache(ctx context.Context, newItem *models.Item, op string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateItemsInCategoryCache", ctx, newItem, op)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateItemsInCategoryCache indicates an expected call of UpdateItemsInCategoryCache.
-func (mr *MockIItemUsecaseMockRecorder) UpdateItemsInCategoryCache(ctx, newItem, op interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateItemsInCategoryCache", reflect.TypeOf((*MockIItemUsecase)(nil).UpdateItemsInCategoryCache), ctx, newItem, op)
 }
 
 // UploadItemImage mocks base method.
@@ -428,20 +364,6 @@ func (m *MockICategoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID)
 func (mr *MockICategoryUsecaseMockRecorder) DeleteCategory(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategory", reflect.TypeOf((*MockICategoryUsecase)(nil).DeleteCategory), ctx, id)
-}
-
-// DeleteCategoryCache mocks base method.
-func (m *MockICategoryUsecase) DeleteCategoryCache(ctx context.Context, name string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteCategoryCache", ctx, name)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// DeleteCategoryCache indicates an expected call of DeleteCategoryCache.
-func (mr *MockICategoryUsecaseMockRecorder) DeleteCategoryCache(ctx, name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategoryCache", reflect.TypeOf((*MockICategoryUsecase)(nil).DeleteCategoryCache), ctx, name)
 }
 
 // DeleteCategoryImage mocks base method.
@@ -530,20 +452,6 @@ func (m *MockICategoryUsecase) GetCategoryList(ctx context.Context) ([]models.Ca
 func (mr *MockICategoryUsecaseMockRecorder) GetCategoryList(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategoryList", reflect.TypeOf((*MockICategoryUsecase)(nil).GetCategoryList), ctx)
-}
-
-// UpdateCache mocks base method.
-func (m *MockICategoryUsecase) UpdateCache(ctx context.Context, id uuid.UUID, op string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateCache", ctx, id, op)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateCache indicates an expected call of UpdateCache.
-func (mr *MockICategoryUsecaseMockRecorder) UpdateCache(ctx, id, op interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateCache", reflect.TypeOf((*MockICategoryUsecase)(nil).UpdateCache), ctx, id, op)
 }
 
 // UpdateCategory mocks base method.

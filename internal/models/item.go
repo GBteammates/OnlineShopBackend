@@ -16,3 +16,17 @@ type ItemWithQuantity struct {
 	Item
 	Quantity int
 }
+
+type ItemsListOptions struct {
+	Limit     int
+	Offset    int
+	SortType  string
+	SortOrder string
+}
+
+type ItemsCacheOptions struct {
+	Op      string
+	Kind    []string
+	NewItem *Item
+	UserId  uuid.UUID
+}
