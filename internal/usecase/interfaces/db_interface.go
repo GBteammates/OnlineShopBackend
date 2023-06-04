@@ -8,56 +8,55 @@ import (
 )
 
 type ItemStore interface {
-	CreateItem(ctx context.Context, item *models.Item) (uuid.UUID, error)
-	UpdateItem(ctx context.Context, item *models.Item) error
-	GetItem(ctx context.Context, id uuid.UUID) (*models.Item, error)
-	ItemsList(ctx context.Context, param string) (chan models.Item, error)
+	Create(ctx context.Context, item *models.Item) (uuid.UUID, error)
+	Update(ctx context.Context, item *models.Item) error
+	Get(ctx context.Context, id uuid.UUID) (*models.Item, error)
+	List(ctx context.Context, param string) (chan models.Item, error)
 	SearchLine(ctx context.Context, param string) (chan models.Item, error)
-	GetItemsByCategory(ctx context.Context, param string) (chan models.Item, error)
-	DeleteItem(ctx context.Context, id uuid.UUID) error
+	ListByCategory(ctx context.Context, param string) (chan models.Item, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 	AddFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
 	DeleteFavouriteItem(ctx context.Context, userId uuid.UUID, itemId uuid.UUID) error
-	GetFavouriteItems(ctx context.Context, userId string) (chan models.Item, error)
-	GetFavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)
-	ItemsListQuantity(ctx context.Context, param string) (int, error)
-	ItemsByCategoryQuantity(ctx context.Context, param string) (int, error)
-	ItemsInSearchQuantity(ctx context.Context, param string) (int, error)
-	ItemsInFavouriteQuantity(ctx context.Context, userId string) (int, error)
+	ListFavouriteItems(ctx context.Context, userId string) (chan models.Item, error)
+	FavouriteItemsId(ctx context.Context, userId uuid.UUID) (*map[uuid.UUID]uuid.UUID, error)
+	ListQuantity(ctx context.Context, param string) (int, error)
+	ListByCategoryQuantity(ctx context.Context, param string) (int, error)
+	InSearchQuantity(ctx context.Context, param string) (int, error)
+	InFavouriteQuantity(ctx context.Context, userId string) (int, error)
 }
 
 type CategoryStore interface {
-	CreateCategory(ctx context.Context, category *models.Category) (uuid.UUID, error)
-	UpdateCategory(ctx context.Context, category *models.Category) error
-	GetCategory(ctx context.Context, id uuid.UUID) (*models.Category, error)
-	GetCategoryList(ctx context.Context) (chan models.Category, error)
-	DeleteCategory(ctx context.Context, id uuid.UUID) error
-	GetCategoryByName(ctx context.Context, name string) (*models.Category, error)
+	Create(ctx context.Context, category *models.Category) (uuid.UUID, error)
+	Update(ctx context.Context, category *models.Category) error
+	Get(ctx context.Context, param string) (*models.Category, error)
+	List(ctx context.Context) (chan models.Category, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type UserStore interface {
-	CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error)
-	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	Create(ctx context.Context, user *models.User) (uuid.UUID, error)
+	UserByEmail(ctx context.Context, email string) (*models.User, error)
 	GetRightsId(ctx context.Context, name string) (models.Rights, error)
 	UpdateUserData(ctx context.Context, user *models.User) (*models.User, error)
 	UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error
-	GetRightsList(ctx context.Context) (chan models.Rights, error)
+	ListRights(ctx context.Context) (chan models.Rights, error)
 	CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error)
 }
 
 type CartStore interface {
-	CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
-	AddItemToCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
-	DeleteCart(ctx context.Context, cartId uuid.UUID) error
-	DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
-	GetCart(ctx context.Context, cartId uuid.UUID) (*models.Cart, error)
-	GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
+	Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error)
+	AddItem(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
+	Delete(ctx context.Context, cartId uuid.UUID) error
+	DeleteItem(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error
+	Get(ctx context.Context, cartId uuid.UUID) (*models.Cart, error)
+	CartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
 }
 
 type OrderStore interface {
-	CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error)
-	DeleteOrder(ctx context.Context, order *models.Order) error
+	Create(ctx context.Context, order *models.Order) (*models.Order, error)
+	Delete(ctx context.Context, order *models.Order) error
 	ChangeAddress(ctx context.Context, order *models.Order) error
 	ChangeStatus(ctx context.Context, order *models.Order) error
-	GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error)
-	GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error)
+	Get(ctx context.Context, id uuid.UUID) (models.Order, error)
+	List(ctx context.Context, user *models.User) (chan models.Order, error)
 }

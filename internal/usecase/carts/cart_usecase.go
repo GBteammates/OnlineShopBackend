@@ -13,19 +13,19 @@ var _ usecase.ICartUsecase = (*cartUsecase)(nil)
 
 type cartUsecase struct {
 	store  usecase.CartStore
-	logger *zap.Logger
+	logger *zap.SugaredLogger
 }
 
-func NewCartUsecase(store usecase.CartStore, logger *zap.Logger) *cartUsecase {
+func NewCartUsecase(store usecase.CartStore, logger *zap.SugaredLogger) *cartUsecase {
 	logger.Debug("Enter in usecase NewCartUsecase()")
 	cart := &cartUsecase{store: store, logger: logger}
 	return cart
 }
 
 // GetCart creates request in db and returns cart or error
-func (c *cartUsecase) GetCart(ctx context.Context, cartId uuid.UUID) (*models.Cart, error) {
-	c.logger.Sugar().Debugf("Enter in usecase GetCart() with args: ctx, cartId: %v", cartId)
-	cart, err := c.store.GetCart(ctx, cartId)
+func (c *cartUsecase) Get(ctx context.Context, cartId uuid.UUID) (*models.Cart, error) {
+	c.logger.Debugf("Enter in usecase Get() with args: ctx, cartId: %v", cartId)
+	cart, err := c.store.Get(ctx, cartId)
 	if err != nil {
 		return nil, err
 	}
@@ -33,9 +33,9 @@ func (c *cartUsecase) GetCart(ctx context.Context, cartId uuid.UUID) (*models.Ca
 }
 
 // GetCartByUserId creates request in db and returns cart or error
-func (c *cartUsecase) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
-	c.logger.Sugar().Debugf("Enter in usecase GetCart() with args: ctx, userId: %v", userId)
-	cart, err := c.store.GetCartByUserId(ctx, userId)
+func (c *cartUsecase) CartByUserId(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
+	c.logger.Debugf("Enter in usecase CartByUserId() with args: ctx, userId: %v", userId)
+	cart, err := c.store.CartByUserId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +43,9 @@ func (c *cartUsecase) GetCartByUserId(ctx context.Context, userId uuid.UUID) (*m
 }
 
 // DeleteItemFromCart delete item from cart
-func (c *cartUsecase) DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error {
-	c.logger.Sugar().Debugf("Enter in usecase DeleteItemFromCart() with args: ctx, cartId: %v, itemId: %v", cartId, itemId)
-	err := c.store.DeleteItemFromCart(ctx, cartId, itemId)
+func (c *cartUsecase) DeleteItem(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error {
+	c.logger.Debugf("Enter in usecase DeleteItem() with args: ctx, cartId: %v, itemId: %v", cartId, itemId)
+	err := c.store.DeleteItem(ctx, cartId, itemId)
 	if err != nil {
 		return err
 	}
@@ -53,19 +53,19 @@ func (c *cartUsecase) DeleteItemFromCart(ctx context.Context, cartId uuid.UUID, 
 }
 
 // Create create new cart
-func (c *cartUsecase) CreateCart(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
-	c.logger.Sugar().Debugf("Enter in usecase cart Create() with args: ctx, userId: %v", userId)
-	cartId, err := c.store.CreateCart(ctx, userId)
+func (c *cartUsecase) Create(ctx context.Context, userId uuid.UUID) (uuid.UUID, error) {
+	c.logger.Debugf("Enter in usecase cart Create() with args: ctx, userId: %v", userId)
+	cartId, err := c.store.Create(ctx, userId)
 	if err != nil {
 		return cartId, err
 	}
 	return cartId, nil
 }
 
-// AddItemToCart add item to cart
-func (c *cartUsecase) AddItemToCart(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error {
-	c.logger.Sugar().Debugf("Enter in usecase AddItemToCart() with args: ctx, cartId: %v, itemId: %v", cartId, itemId)
-	err := c.store.AddItemToCart(ctx, cartId, itemId)
+// AddItem add item to cart
+func (c *cartUsecase) AddItem(ctx context.Context, cartId uuid.UUID, itemId uuid.UUID) error {
+	c.logger.Debugf("Enter in usecase AddItem() with args: ctx, cartId: %v, itemId: %v", cartId, itemId)
+	err := c.store.AddItem(ctx, cartId, itemId)
 	if err != nil {
 		return err
 	}
@@ -73,9 +73,9 @@ func (c *cartUsecase) AddItemToCart(ctx context.Context, cartId uuid.UUID, itemI
 }
 
 // DeleteCart delete cart from db
-func (c *cartUsecase) DeleteCart(ctx context.Context, cartId uuid.UUID) error {
-	c.logger.Sugar().Debugf("Enter in usecase DeleteCart() with args: ctx, cartId: %v", cartId)
-	err := c.store.DeleteCart(ctx, cartId)
+func (c *cartUsecase) Delete(ctx context.Context, cartId uuid.UUID) error {
+	c.logger.Debugf("Enter in usecase Delete() with args: ctx, cartId: %v", cartId)
+	err := c.store.Delete(ctx, cartId)
 	if err != nil {
 		return err
 	}

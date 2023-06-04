@@ -8,3 +8,7 @@ type Category struct {
 	Description string
 	Image       string
 }
+
+const (
+	CategoriesList = "CategoriesList"
+)

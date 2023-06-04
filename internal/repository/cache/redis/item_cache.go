@@ -15,41 +15,13 @@ import (
 
 var _ usecase.IItemsCache = &itemsCache{}
 
-// Keys for create and get cache
-const (
-	itemsListKey          = "ItemsList"
-	itemsListKeyNameAsc   = "ItemsListnameasc"
-	itemsListKeyNameDesc  = "ItemsListnamedesc"
-	itemsListKeyPriceAsc  = "ItemsListpriceasc"
-	itemsListKeyPriceDesc = "ItemsListpricedesc"
-	itemsQuantityKey      = "ItemsQuantity"
-	asc                   = "asc"
-	desc                  = "desc"
-	nameAsc               = "nameasc"
-	nameDesc              = "namedesc"
-	priceAsc              = "priceasc"
-	priceDesc             = "pricedesc"
-	quantity              = "Quantity"
-	price                 = "price"
-	name                  = "name"
-	updateOp              = "update"
-	createOp              = "create"
-	deleteOp              = "delete"
-	addOp                 = "add"
-	fav                   = "Fav"
-	list                  = "list"
-	inCategory            = "inCategory"
-	search                = "search"
-	favourite             = "favourite"
-)
-
 type itemsCache struct {
 	*RedisCache
-	cacheValid cacheValid
-	logger     *zap.Logger
+	valid  valid
+	logger *zap.SugaredLogger
 }
 
-type cacheValid struct {
+type valid struct {
 	list       bool
 	inCategory bool
 	search     bool
@@ -67,116 +39,60 @@ type options struct {
 	userId  uuid.UUID
 }
 
-func NewItemsCache(cache *RedisCache, logger *zap.Logger) *itemsCache {
+func NewItemsCache(cache *RedisCache, logger *zap.SugaredLogger) *itemsCache {
 	logger.Debug("Enter in cache NewItemsCache")
-	cacheValid := cacheValid{}
-	return &itemsCache{cache, cacheValid, logger}
+	valid := valid{}
+	return &itemsCache{cache, valid, logger}
 }
 
 func (cache *itemsCache) ItemsToCache(ctx context.Context, items []models.Item, kind, param string) error {
-	cache.logger.Sugar().Debugf("Enter in cache CreateItemsCache() with args: ctx, items, kind: %s, param: %s", kind, param)
+	cache.logger.Debugf("Enter in cache CreateItemsCache() with args: ctx, items, kind: %s, param: %s", kind, param)
 
-	switch kind {
-	case list:
-		return cache.itemsToItemsListCache(ctx, items)
-	case inCategory:
-		return cache.itemsToItemsByCategoryListCache(ctx, items, param)
-	case search:
-		return cache.itemsToItemsInSearchCache(ctx, items, param)
-	default:
-		return nil
+	if err := cache.itemsToItemsListCache(ctx, param, kind, items); err != nil {
+		return fmt.Errorf("error on items to cache: %w", err)
 	}
+	return nil
 }
 
-func (cache *itemsCache) itemsToItemsListCache(ctx context.Context, items []models.Item) error {
-	cache.logger.Debug("Enter in cache itemsToItemsListCache()")
+func (cache *itemsCache) itemsToItemsListCache(ctx context.Context, param, kind string, items []models.Item) error {
+	cache.logger.Debug("Enter in cache itemsToItemsListCache() with args: ctx, param: %s, kind: %s, items", param, kind)
 
-	err := cache.createItemsQuantityCache(ctx, len(items), itemsQuantityKey)
+	err := cache.createItemsQuantityCache(ctx, len(items), param+models.Quantity)
 	if err != nil {
-		cache.updateStatus(ctx, list, false)
+		cache.updateStatus(ctx, kind, false)
 		return err
 	}
 
-	keys := []string{itemsListKeyNameAsc, itemsListKeyNameDesc, itemsListKeyPriceAsc, itemsListKeyPriceDesc}
+	keys := []string{
+		param + models.NameASC,
+		param + models.NameDESC,
+		param + models.PriceASC,
+		param + models.PriceDESC,
+	}
+
 	for _, key := range keys {
 		sortType, sortOrder := helpers.SortOptionsFromKey(key)
 		helpers.SortItems(items, sortType, sortOrder)
 		err := cache.createItemsCache(ctx, items, key)
 		if err != nil {
-			cache.updateStatus(ctx, list, false)
+			cache.updateStatus(ctx, kind, false)
 			return err
 		}
 	}
-	cache.updateStatus(ctx, list, true)
+	cache.updateStatus(ctx, kind, true)
 	return nil
 }
 
-func (cache *itemsCache) itemsToItemsByCategoryListCache(ctx context.Context, items []models.Item, categoryName string) error {
-	cache.logger.Sugar().Debugf("Enter in cache itemsToItemsByCategoryListCache() with args: ctx, items, categoryName: %s", categoryName)
-
-	err := cache.createItemsQuantityCache(ctx, len(items), categoryName+quantity)
-	if err != nil {
-		cache.updateStatus(ctx, inCategory, false)
-		return err
-	}
-
-	categoryItemsKeyNameAsc := categoryName + nameAsc
-	categoryItemsKeyNameDesc := categoryName + nameDesc
-	categoryItemsKeyPriceAsc := categoryName + priceAsc
-	categoryItemsKeyPriceDesc := categoryName + priceDesc
-	keys := []string{categoryItemsKeyNameAsc, categoryItemsKeyNameDesc, categoryItemsKeyPriceAsc, categoryItemsKeyPriceDesc}
-	for _, key := range keys {
-		sortType, sortOrder := helpers.SortOptionsFromKey(key)
-		helpers.SortItems(items, sortType, sortOrder)
-		err := cache.createItemsCache(ctx, items, key)
-		if err != nil {
-			cache.updateStatus(ctx, inCategory, false)
-			return err
-		}
-	}
-
-	cache.updateStatus(ctx, inCategory, true)
-	return nil
-}
-
-func (cache *itemsCache) itemsToItemsInSearchCache(ctx context.Context, items []models.Item, searchRequest string) error {
-	cache.logger.Sugar().Debugf("Enter in cache itemsToItemsInSearchCache() with args: ctx, items, searchRequest: %s", searchRequest)
-
-	err := cache.createItemsQuantityCache(ctx, len(items), searchRequest+quantity)
-	if err != nil {
-		cache.updateStatus(ctx, search, false)
-		return err
-	}
-
-	searchKeyNameAsc := searchRequest + nameAsc
-	searchKeyNameDesc := searchRequest + nameDesc
-	searchKeyPriceAsc := searchRequest + priceAsc
-	searchKeyPriceDesc := searchRequest + priceDesc
-	keys := []string{searchKeyNameAsc, searchKeyNameDesc, searchKeyPriceAsc, searchKeyPriceDesc}
-	for _, key := range keys {
-		sortType, sortOrder := helpers.SortOptionsFromKey(key)
-		helpers.SortItems(items, sortType, sortOrder)
-		err := cache.createItemsCache(ctx, items, key)
-		if err != nil {
-			cache.updateStatus(ctx, search, false)
-			return err
-		}
-	}
-
-	cache.updateStatus(ctx, search, true)
-	return nil
-}
-
-func (cache *itemsCache) ItemsFromCache(ctx context.Context, cacheKey, kind string) ([]models.Item, error) {
-	cache.logger.Sugar().Debugf("Enter in usecase itemsListFromCache() with args: ctx, cacheKey: %s, kind: %s", cacheKey, kind)
+func (cache *itemsCache) ItemsFromCache(ctx context.Context, key, kind string) ([]models.Item, error) {
+	cache.logger.Debugf("Enter in cache itemsListFromCache() with args: ctx, key: %s, kind: %s", key, kind)
 
 	if !cache.status(ctx, kind) {
 		return nil, fmt.Errorf("cache with kind: %s is not valid", kind)
 	}
-	if !cache.checkCache(ctx, cacheKey) {
-		return nil, fmt.Errorf("cache with key: %s is not exist", cacheKey)
+	if !cache.checkCache(ctx, key) {
+		return nil, fmt.Errorf("cache with key: %s is not exist", key)
 	}
-	items, err := cache.getItemsCache(ctx, cacheKey)
+	items, err := cache.getItemsCache(ctx, key)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +100,7 @@ func (cache *itemsCache) ItemsFromCache(ctx context.Context, cacheKey, kind stri
 }
 
 func (cache *itemsCache) ItemsQuantityToCache(ctx context.Context, value int, key, kind string) error {
-	cache.logger.Sugar().Debugf("Enter in cache ItemsQuantityToCache() with args: ctx, value: %d, key: %s, kind: %s", value, key, kind)
+	cache.logger.Debugf("Enter in cache ItemsQuantityToCache() with args: ctx, value: %d, key: %s, kind: %s", value, key, kind)
 	err := cache.createItemsQuantityCache(ctx, value, key)
 	if err != nil {
 		cache.updateStatus(ctx, kind, false)
@@ -194,7 +110,7 @@ func (cache *itemsCache) ItemsQuantityToCache(ctx context.Context, value int, ke
 }
 
 func (cache *itemsCache) ItemsQuantityFromCache(ctx context.Context, key string, kind string) (int, error) {
-	cache.logger.Sugar().Debugf("Enter in cache ItemsQuantityFromCache() with args: ctx, key: %s, kind: %s", key, kind)
+	cache.logger.Debugf("Enter in cache ItemsQuantityFromCache() with args: ctx, key: %s, kind: %s", key, kind)
 	if !cache.status(ctx, kind) {
 		return -1, fmt.Errorf("cache with kind: %s is not valid", kind)
 	}
@@ -209,7 +125,7 @@ func (cache *itemsCache) ItemsQuantityFromCache(ctx context.Context, key string,
 }
 
 func (cache *itemsCache) FavouriteItemsIdsToCache(ctx context.Context, favIds *map[uuid.UUID]uuid.UUID, key, kind string) error {
-	cache.logger.Sugar().Debugf("Enter in cache FavouriteItemsIdsToCache() with args: ctx, favIds, key: %s, kind: %s", key, kind)
+	cache.logger.Debugf("Enter in cache FavouriteItemsIdsToCache() with args: ctx, favIds, key: %s, kind: %s", key, kind)
 
 	err := cache.createFavouriteItemsIdCache(ctx, *favIds, key)
 	if err != nil {
@@ -220,7 +136,7 @@ func (cache *itemsCache) FavouriteItemsIdsToCache(ctx context.Context, favIds *m
 }
 
 func (cache *itemsCache) FavouriteItemsIdsFromCache(ctx context.Context, key, kind string) (*map[uuid.UUID]uuid.UUID, error) {
-	cache.logger.Sugar().Debugf("Enter in cache FavouriteItemsIdsFromCache() with args: ctx, key: %s, kind: %s", key, kind)
+	cache.logger.Debugf("Enter in cache FavouriteItemsIdsFromCache() with args: ctx, key: %s, kind: %s", key, kind)
 
 	if !cache.status(ctx, kind) {
 		return nil, fmt.Errorf("cache with kind: %s is not valid", kind)
@@ -236,8 +152,8 @@ func (cache *itemsCache) FavouriteItemsIdsFromCache(ctx context.Context, key, ki
 }
 
 // UpdateCache updating cache when creating, updating or deleting item
-func (cache *itemsCache) UpdateCache(ctx context.Context, opts *models.ItemsCacheOptions) error {
-	cache.logger.Sugar().Debugf("Enter in itemCache UpdateCache() with args: ctx, opts: %v", opts)
+func (cache *itemsCache) UpdateCache(ctx context.Context, opts *models.CacheOptions) error {
+	cache.logger.Debugf("Enter in itemCache UpdateCache() with args: ctx, opts: %v", opts)
 
 	for _, kind := range opts.Kind {
 		if !cache.status(ctx, kind) {
@@ -259,7 +175,7 @@ func (cache *itemsCache) UpdateCache(ctx context.Context, opts *models.ItemsCach
 }
 
 func (cache *itemsCache) UpdateFavIdsCache(ctx context.Context, userId uuid.UUID, item *models.Item, op string) error {
-	cache.logger.Sugar().Debugf("Enter in cache updateFavouritesCache() with args: ctx, userId: %v, item: %v, op: %s", userId, item, op)
+	cache.logger.Debugf("Enter in cache updateFavouritesCache() with args: ctx, userId: %v, item: %v, op: %s", userId, item, op)
 
 	err := cache.updateFavIdsCache(ctx, userId, item.Id, op)
 	if err != nil {
@@ -271,7 +187,7 @@ func (cache *itemsCache) UpdateFavIdsCache(ctx context.Context, userId uuid.UUID
 
 // CheckCache checks for data in the cache
 func (cache *itemsCache) checkCache(ctx context.Context, key string) bool {
-	cache.logger.Sugar().Debugf("Enter in cache CheckCache() with args: ctx, key: %s", key)
+	cache.logger.Debugf("Enter in cache CheckCache() with args: ctx, key: %s", key)
 	check := cache.Exists(ctx, key)
 	result, err := check.Result()
 	if err != nil {
@@ -290,7 +206,7 @@ func (cache *itemsCache) checkCache(ctx context.Context, key string) bool {
 
 // CreateCache add data in the cache
 func (cache *itemsCache) createItemsCache(ctx context.Context, res []models.Item, key string) error {
-	cache.logger.Sugar().Debugf("Enter in cache CreateItemsCache() with args: ctx, res, key: %s", key)
+	cache.logger.Debugf("Enter in cache CreateItemsCache() with args: ctx, res, key: %s", key)
 	in := results{
 		Responses: res,
 	}
@@ -309,7 +225,7 @@ func (cache *itemsCache) createItemsCache(ctx context.Context, res []models.Item
 
 // CreateFavouriteItemsIdCache add favourite items id in cache
 func (cache *itemsCache) createFavouriteItemsIdCache(ctx context.Context, res map[uuid.UUID]uuid.UUID, key string) error {
-	cache.logger.Sugar().Debugf("Enter in cache CreateFavouriteItemsIdCache() with args: ctx, res, key: %s", key)
+	cache.logger.Debugf("Enter in cache CreateFavouriteItemsIdCache() with args: ctx, res, key: %s", key)
 	data, err := json.Marshal(res)
 	if err != nil {
 		return fmt.Errorf("error on marshal favourite items id cache: %w", err)
@@ -323,7 +239,7 @@ func (cache *itemsCache) createFavouriteItemsIdCache(ctx context.Context, res ma
 
 // CreateItemsQuantityCache create cache for items quantity
 func (cache *itemsCache) createItemsQuantityCache(ctx context.Context, value int, key string) error {
-	cache.logger.Sugar().Debugf("Enter in cache CreateItemsQuantityCache() with args: ctx, value: %d, key: %s", value, key)
+	cache.logger.Debugf("Enter in cache CreateItemsQuantityCache() with args: ctx, value: %d, key: %s", value, key)
 	err := cache.Set(ctx, key, value, cache.TTL).Err()
 	if err != nil {
 		return fmt.Errorf("redis: error on set key %q: %w", key, err)
@@ -334,7 +250,7 @@ func (cache *itemsCache) createItemsQuantityCache(ctx context.Context, value int
 
 // GetItemsCache retrieves data from the cache
 func (cache *itemsCache) getItemsCache(ctx context.Context, key string) ([]models.Item, error) {
-	cache.logger.Sugar().Debugf("Enter in cache GetItemsCache() with args: ctx, key: %s", key)
+	cache.logger.Debugf("Enter in cache GetItemsCache() with args: ctx, key: %s", key)
 	res := results{}
 	data, err := cache.Get(ctx, key).Bytes()
 	if err == redis.Nil {
@@ -342,12 +258,12 @@ func (cache *itemsCache) getItemsCache(ctx context.Context, key string) ([]model
 		cache.logger.Debug("Success get nil result")
 		return nil, nil
 	} else if err != nil {
-		cache.logger.Sugar().Errorf("Error on get cache: %v", err)
+		cache.logger.Errorf("Error on get cache: %v", err)
 		return nil, err
 	}
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		cache.logger.Sugar().Warnf("Can't json unmarshal data: %v", data)
+		cache.logger.Warnf("Can't json unmarshal data: %v", data)
 		return nil, err
 	}
 	cache.logger.Debug("Get cache success")
@@ -356,10 +272,10 @@ func (cache *itemsCache) getItemsCache(ctx context.Context, key string) ([]model
 
 // GetItemsQuantityCache retrieves data from the cache
 func (cache *itemsCache) getItemsQuantityCache(ctx context.Context, key string) (int, error) {
-	cache.logger.Sugar().Debugf("Enter in cache GetItemsQuantityCache() with args: ctx, key: %s", key)
+	cache.logger.Debugf("Enter in cache GetItemsQuantityCache() with args: ctx, key: %s", key)
 	data, err := cache.Get(ctx, key).Int()
 	if err != nil {
-		cache.logger.Sugar().Errorf("Error on get cache: %v", err)
+		cache.logger.Errorf("Error on get cache: %v", err)
 		return data, err
 	}
 	cache.logger.Debug("Get cache success")
@@ -368,7 +284,7 @@ func (cache *itemsCache) getItemsQuantityCache(ctx context.Context, key string) 
 
 // GetItemsQuantityCache retrieves data from the cache
 func (cache *itemsCache) getFavouriteItemsIdCache(ctx context.Context, key string) (*map[uuid.UUID]uuid.UUID, error) {
-	cache.logger.Sugar().Debugf("Enter in cache GetFavouriteItemsIdCache() with args: ctx, key: %s", key)
+	cache.logger.Debugf("Enter in cache GetFavouriteItemsIdCache() with args: ctx, key: %s", key)
 	res := make(map[uuid.UUID]uuid.UUID)
 	data, err := cache.Get(ctx, key).Bytes()
 	if err == redis.Nil {
@@ -376,12 +292,12 @@ func (cache *itemsCache) getFavouriteItemsIdCache(ctx context.Context, key strin
 		cache.logger.Debug("Success get nil result")
 		return nil, nil
 	} else if err != nil {
-		cache.logger.Sugar().Errorf("Error on get cache: %v", err)
+		cache.logger.Errorf("Error on get cache: %v", err)
 		return nil, err
 	}
 	err = json.Unmarshal(data, &res)
 	if err != nil {
-		cache.logger.Sugar().Warnf("Can't json unmarshal data: %v", data)
+		cache.logger.Warnf("Can't json unmarshal data: %v", data)
 		return nil, err
 	}
 	cache.logger.Debug("Get cache success")
@@ -389,7 +305,7 @@ func (cache *itemsCache) getFavouriteItemsIdCache(ctx context.Context, key strin
 }
 
 func (cache *itemsCache) updateItemsCache(ctx context.Context, opts options) error {
-	cache.logger.Sugar().Debugf("Enter in itemCache updateItemsListCache() with args: ctx, opts: %v", opts)
+	cache.logger.Debugf("Enter in itemCache updateItemsListCache() with args: ctx, opts: %v", opts)
 
 	if !cache.status(ctx, opts.kind) {
 		return fmt.Errorf("cache with kind: %s is not valid", opts.kind)
@@ -412,7 +328,7 @@ func (cache *itemsCache) updateItemsCache(ctx context.Context, opts options) err
 		}
 
 		// Сhange the list of items in accordance with the operation
-		if opts.op == updateOp {
+		if opts.op == models.UpdateOp {
 			for i, item := range items {
 				if item.Id == opts.newItem.Id {
 					items[i] = *opts.newItem
@@ -420,7 +336,7 @@ func (cache *itemsCache) updateItemsCache(ctx context.Context, opts options) err
 				}
 			}
 		}
-		if opts.op == createOp {
+		if opts.op == models.CreateOp {
 			items = append(items, *opts.newItem)
 			err := cache.createItemsQuantityCache(ctx, len(items), quantityKey)
 			if err != nil {
@@ -428,7 +344,7 @@ func (cache *itemsCache) updateItemsCache(ctx context.Context, opts options) err
 				return fmt.Errorf("error on create items quantity cache: %w", err)
 			}
 		}
-		if opts.op == deleteOp {
+		if opts.op == models.DeleteOp {
 			for i, item := range items {
 				if item.Id == opts.newItem.Id {
 					items = append(items[:i], items[i+1:]...)
@@ -451,32 +367,47 @@ func (cache *itemsCache) updateItemsCache(ctx context.Context, opts options) err
 			cache.updateStatus(ctx, opts.kind, false)
 			return err
 		}
-		cache.logger.Sugar().Infof("Cache of items list with key: %s update success", key)
+		cache.logger.Infof("Cache of items list with key: %s update success", key)
 	}
 	return nil
 }
 
 func (cache *itemsCache) getKeysByKind(ctx context.Context, opts options) ([]string, string) {
-	cache.logger.Sugar().Debugf("Enter in cache getKeysByKind() with args: ctx, opts: %v", opts)
+	cache.logger.Debugf("Enter in cache getKeysByKind() with args: ctx, opts: %v", opts)
 
 	switch opts.kind {
-	case list:
-		return []string{itemsListKeyNameAsc, itemsListKeyNameDesc, itemsListKeyPriceAsc, itemsListKeyPriceDesc}, itemsQuantityKey
-	case inCategory:
-		return []string{opts.newItem.Category.Name + nameAsc, opts.newItem.Category.Name + nameDesc, opts.newItem.Category.Name + priceAsc, opts.newItem.Category.Name + priceDesc}, opts.newItem.Category.Name + quantity
-	case favourite:
-		return []string{opts.userId.String() + nameAsc, opts.userId.String() + nameDesc, opts.userId.String() + priceAsc, opts.userId.String() + priceDesc}, opts.userId.String() + quantity
+	case models.List:
+		return []string{
+			models.ListItemsKey + models.NameASC,
+			models.ListItemsKey + models.NameDESC,
+			models.ListItemsKey + models.PriceASC,
+			models.ListItemsKey + models.PriceDESC,
+		}, models.ListItemsKey + models.Quantity
+	case models.InCategory:
+		return []string{
+			opts.newItem.Category.Name + models.NameASC,
+			opts.newItem.Category.Name + models.NameDESC,
+			opts.newItem.Category.Name + models.PriceASC,
+			opts.newItem.Category.Name + models.PriceDESC,
+		}, opts.newItem.Category.Name + models.Quantity
+	case models.Favourites:
+		return []string{
+			opts.userId.String() + models.NameASC,
+			opts.userId.String() + models.NameDESC,
+			opts.userId.String() + models.PriceASC,
+			opts.userId.String() + models.PriceDESC,
+		}, opts.userId.String() + models.Quantity
 	default:
-		cache.logger.Warn("Unexpected kind in getKeysByKind()")
-		return []string{}, ""
+		cache.logger.Warn("Unexpected opts.kind: %s", opts.kind)
+		return []string{""}, ""
 	}
 }
 
 // UpdateFavIdsCache updates cache with favourite items identificators
 func (cache *itemsCache) updateFavIdsCache(ctx context.Context, userId, itemId uuid.UUID, op string) error {
-	cache.logger.Sugar().Debugf("Enter in usecase UpdateFavIdsCache() with args userId: %v, itemId: %v", userId, itemId)
+	cache.logger.Debugf("Enter in usecase UpdateFavIdsCache() with args userId: %v, itemId: %v", userId, itemId)
 	// Check the presence of a cache with key
-	if !cache.checkCache(ctx, userId.String()+fav) {
+	if !cache.checkCache(ctx, userId.String()+models.FavIDs) {
 		// If cache doesn't exists create it
 		favMap := make(map[uuid.UUID]uuid.UUID)
 		// Add itemId in map of favourite
@@ -484,7 +415,7 @@ func (cache *itemsCache) updateFavIdsCache(ctx context.Context, userId, itemId u
 		favMap[itemId] = userId
 
 		// Record the cache with favourite items identificators
-		err := cache.createFavouriteItemsIdCache(ctx, favMap, userId.String()+fav)
+		err := cache.createFavouriteItemsIdCache(ctx, favMap, userId.String()+models.FavIDs)
 		if err != nil {
 			return err
 		}
@@ -492,22 +423,22 @@ func (cache *itemsCache) updateFavIdsCache(ctx context.Context, userId, itemId u
 		return nil
 	}
 	// If cache exists get it
-	favMapLink, err := cache.getFavouriteItemsIdCache(ctx, userId.String()+fav)
+	favMapLink, err := cache.getFavouriteItemsIdCache(ctx, userId.String()+models.FavIDs)
 	if err != nil {
-		cache.logger.Sugar().Warn("error on get favourite items id cache with key: %v, err: %v", userId.String()+fav, err)
+		cache.logger.Warn("error on get favourite items id cache with key: %v, err: %v", userId.String()+models.FavIDs, err)
 		return err
 	}
 	// Сhange the map of favourite items identificators
 	// in accordance with the operation
 	favMap := *favMapLink
-	if op == addOp {
+	if op == models.CreateOp {
 		favMap[itemId] = userId
 	}
-	if op == deleteOp {
+	if op == models.DeleteOp {
 		delete(favMap, itemId)
 	}
 	// Record the updated cache
-	err = cache.createFavouriteItemsIdCache(ctx, favMap, userId.String()+fav)
+	err = cache.createFavouriteItemsIdCache(ctx, favMap, userId.String()+models.FavIDs)
 	if err != nil {
 		return err
 	}
@@ -516,31 +447,31 @@ func (cache *itemsCache) updateFavIdsCache(ctx context.Context, userId, itemId u
 }
 
 func (cache *itemsCache) status(ctx context.Context, kind string) bool {
-	cache.logger.Sugar().Debugf("Enter in cache Status() with args: ctx, kind: %s", kind)
+	cache.logger.Debugf("Enter in cache Status() with args: ctx, kind: %s", kind)
 	switch kind {
-	case list:
-		return cache.cacheValid.list
-	case inCategory:
-		return cache.cacheValid.inCategory
-	case search:
-		return cache.cacheValid.search
-	case favourite:
-		return cache.cacheValid.favourite
+	case models.List:
+		return cache.valid.list
+	case models.InCategory:
+		return cache.valid.inCategory
+	case models.Search:
+		return cache.valid.search
+	case models.Favourites:
+		return cache.valid.favourite
 	default:
 		return false
 	}
 }
 
 func (cache *itemsCache) updateStatus(ctx context.Context, kind string, status bool) {
-	cache.logger.Sugar().Debugf("Enter in cache ChangeStatus() with args: ctx, kind: %s, status: %t", kind, status)
+	cache.logger.Debugf("Enter in cache ChangeStatus() with args: ctx, kind: %s, status: %t", kind, status)
 	switch kind {
-	case list:
-		cache.cacheValid.list = status
-	case inCategory:
-		cache.cacheValid.inCategory = status
-	case search:
-		cache.cacheValid.search = status
-	case favourite:
-		cache.cacheValid.favourite = status
+	case models.List:
+		cache.valid.list = status
+	case models.InCategory:
+		cache.valid.inCategory = status
+	case models.Search:
+		cache.valid.search = status
+	case models.Favourites:
+		cache.valid.favourite = status
 	}
 }

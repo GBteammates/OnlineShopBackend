@@ -11,26 +11,26 @@ import (
 	"go.uber.org/zap"
 )
 
-type userRepo struct {
-	storage *PGres
-	logger  *zap.SugaredLogger
+type userStore struct {
+	db     *PGres
+	logger *zap.SugaredLogger
 }
 
-var _ usecase.UserStore = (*userRepo)(nil)
+var _ usecase.UserStore = (*userStore)(nil)
 
-func NewUser(storage *PGres, logger *zap.SugaredLogger) *userRepo {
-	return &userRepo{
-		storage: storage,
-		logger:  logger,
+func NewUser(db *PGres, logger *zap.SugaredLogger) *userStore {
+	return &userStore{
+		db:     db,
+		logger: logger,
 	}
 }
 
-func (repo *userRepo) CreateUser(ctx context.Context, user *models.User) (uuid.UUID, error) {
+func (r *userStore) Create(ctx context.Context, user *models.User) (uuid.UUID, error) {
 	select {
 	case <-ctx.Done():
 		return uuid.Nil, fmt.Errorf("context is closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		// we create rights and address somewhere in usecase or get them from user
 		row := pool.QueryRow(ctx, `INSERT INTO users 
 		(name, lastname, password, email, rights, zipcode, country, city, street) VALUES
@@ -46,13 +46,13 @@ func (repo *userRepo) CreateUser(ctx context.Context, user *models.User) (uuid.U
 	}
 }
 
-func (repo *userRepo) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-	repo.logger.Debug("Enter in repository GetUserByEmail()")
+func (r *userStore) UserByEmail(ctx context.Context, email string) (*models.User, error) {
+	r.logger.Debug("Enter in rsitory GetUserByEmail()")
 	select {
 	case <-ctx.Done():
 		return &models.User{}, fmt.Errorf("context is closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		row := pool.QueryRow(ctx, `SELECT users.id, users.name, lastname, password, email, rights.id, zipcode, country, city, street,
 		rights.name, rights.rules FROM users INNER JOIN rights ON email=$1 and rights.id=users.rights`, email)
 		var user = models.User{}
@@ -65,30 +65,30 @@ func (repo *userRepo) GetUserByEmail(ctx context.Context, email string) (*models
 	}
 }
 
-func (repo *userRepo) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
-	repo.logger.Debug("Enter in repository UpdateUserData()")
+func (r *userStore) UpdateUserData(ctx context.Context, user *models.User) (*models.User, error) {
+	r.logger.Debug("Enter in rsitory UpdateUserData()")
 	select {
 	case <-ctx.Done():
 		return &models.User{}, fmt.Errorf("context is closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 		if err != nil {
-			repo.logger.Errorf("can't create transaction: %s", err)
+			r.logger.Errorf("can't create transaction: %s", err)
 			return &models.User{}, fmt.Errorf("can't create transaction: %w", err)
 		}
-		repo.logger.Debug("transaction begin success")
+		r.logger.Debug("transaction begin success")
 		defer func() {
 			if err != nil {
-				repo.logger.Errorf("transaction rolled back")
+				r.logger.Errorf("transaction rolled back")
 				if err = tx.Rollback(ctx); err != nil {
-					repo.logger.Errorf("can't rollback %s", err)
+					r.logger.Errorf("can't rollback %s", err)
 				}
 
 			} else {
-				repo.logger.Info("transaction commited")
+				r.logger.Info("transaction commited")
 				if err != tx.Commit(ctx) {
-					repo.logger.Errorf("can't commit %s", err)
+					r.logger.Errorf("can't commit %s", err)
 				}
 			}
 		}()
@@ -102,38 +102,38 @@ func (repo *userRepo) UpdateUserData(ctx context.Context, user *models.User) (*m
 			user.Address.Zipcode,
 			user.Id)
 		if err != nil {
-			repo.logger.Errorf("error on update user %s: %s", user.Id, err)
+			r.logger.Errorf("error on update user %s: %s", user.Id, err)
 			return &models.User{}, fmt.Errorf("error on update item %s: %w", user.Id, err)
 		}
-		repo.logger.Infof("item %s successfully updated %s", user.Id, user.Lastname)
+		r.logger.Infof("item %s successfully updated %s", user.Id, user.Lastname)
 		return user, nil
 	}
 }
 
-func (repo *userRepo) UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error {
-	repo.logger.Debug("Enter in repository UpdateUserRole()")
+func (r *userStore) UpdateUserRole(ctx context.Context, roleId uuid.UUID, email string) error {
+	r.logger.Debug("Enter in rsitory UpdateUserRole()")
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context is closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 		if err != nil {
-			repo.logger.Errorf("can't create transaction: %s", err)
+			r.logger.Errorf("can't create transaction: %s", err)
 			return fmt.Errorf("can't create transaction: %w", err)
 		}
-		repo.logger.Debug("transaction begin success")
+		r.logger.Debug("transaction begin success")
 		defer func() {
 			if err != nil {
-				repo.logger.Errorf("transaction rolled back")
+				r.logger.Errorf("transaction rolled back")
 				if err = tx.Rollback(ctx); err != nil {
-					repo.logger.Errorf("can't rollback %s", err)
+					r.logger.Errorf("can't rollback %s", err)
 				}
 
 			} else {
-				repo.logger.Info("transaction commited")
+				r.logger.Info("transaction commited")
 				if err != tx.Commit(ctx) {
-					repo.logger.Errorf("can't commit %s", err)
+					r.logger.Errorf("can't commit %s", err)
 				}
 			}
 		}()
@@ -142,20 +142,20 @@ func (repo *userRepo) UpdateUserRole(ctx context.Context, roleId uuid.UUID, emai
 			roleId,
 			email)
 		if err != nil {
-			repo.logger.Errorf("error on update user %s: %s", email, err)
+			r.logger.Errorf("error on update user %s: %s", email, err)
 			return fmt.Errorf("error on update user %s: %w", email, err)
 		}
-		repo.logger.Infof("user role was successfully updated %s", email)
+		r.logger.Infof("user role was successfully updated %s", email)
 		return nil
 	}
 }
 
-func (repo *userRepo) GetRightsId(ctx context.Context, name string) (models.Rights, error) {
+func (r *userStore) GetRightsId(ctx context.Context, name string) (models.Rights, error) {
 	select {
 	case <-ctx.Done():
 		return models.Rights{}, fmt.Errorf("context is closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		row := pool.QueryRow(ctx, `SELECT id, name, rules FROM rights WHERE name=$1`, name)
 		var rights = models.Rights{}
 		err := row.Scan(&rights.Id, &rights.Name, &rights.Rules)
@@ -167,18 +167,18 @@ func (repo *userRepo) GetRightsId(ctx context.Context, name string) (models.Righ
 	}
 }
 
-func (repo *userRepo) GetRightsList(ctx context.Context) (chan models.Rights, error) {
-	repo.logger.Debug("Enter in repository GetCategoryList() with args: ctx")
+func (r *userStore) ListRights(ctx context.Context) (chan models.Rights, error) {
+	r.logger.Debug("Enter in rsitory GetCategoryList() with args: ctx")
 	rolesChan := make(chan models.Rights, 100)
 	go func() {
 		defer close(rolesChan)
 		rights := &models.Rights{}
 
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		rows, err := pool.Query(ctx, `
 		SELECT id, name, rules FROM rights`) // WHERE deleted_at is null
 		if err != nil {
-			repo.logger.Error(fmt.Errorf("error on rights list query context: %w", err).Error())
+			r.logger.Error(fmt.Errorf("error on rights list query context: %w", err).Error())
 			return
 		}
 		defer rows.Close()
@@ -189,7 +189,7 @@ func (repo *userRepo) GetRightsList(ctx context.Context) (chan models.Rights, er
 				&rights.Name,
 				&rights.Rules,
 			); err != nil {
-				repo.logger.Error(err.Error())
+				r.logger.Error(err.Error())
 				return
 			}
 			rolesChan <- *rights
@@ -199,29 +199,29 @@ func (repo *userRepo) GetRightsList(ctx context.Context) (chan models.Rights, er
 	return rolesChan, nil
 }
 
-func (repo *userRepo) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error) {
-	repo.logger.Debugf("Enter in repository CreateRights() with args: ctx, rights: %v", rights)
+func (r *userStore) CreateRights(ctx context.Context, rights *models.Rights) (uuid.UUID, error) {
+	r.logger.Debugf("Enter in rsitory CreateRights() with args: ctx, rights: %v", rights)
 
 	var id uuid.UUID
-	pool := repo.storage.GetPool()
+	pool := r.db.GetPool()
 
 	tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		repo.logger.Errorf("Can't create transaction: %s", err)
+		r.logger.Errorf("Can't create transaction: %s", err)
 		return uuid.Nil, fmt.Errorf("can't create transaction: %w", err)
 	}
-	repo.logger.Debug("Transaction begin success")
+	r.logger.Debug("Transaction begin success")
 	defer func() {
 		if err != nil {
-			repo.logger.Errorf("Transaction rolled back")
+			r.logger.Errorf("Transaction rolled back")
 			if err = tx.Rollback(ctx); err != nil {
-				repo.logger.Errorf("Can't rollback %s", err)
+				r.logger.Errorf("Can't rollback %s", err)
 			}
 
 		} else {
-			repo.logger.Info("Transaction commited")
+			r.logger.Info("Transaction commited")
 			if err != tx.Commit(ctx) {
-				repo.logger.Errorf("Can't commit %s", err)
+				r.logger.Errorf("Can't commit %s", err)
 			}
 		}
 	}()
@@ -231,10 +231,10 @@ func (repo *userRepo) CreateRights(ctx context.Context, rights *models.Rights) (
 	)
 	err = row.Scan(&id)
 	if err != nil {
-		repo.logger.Errorf("can't create rights %s", err)
+		r.logger.Errorf("can't create rights %s", err)
 		return uuid.Nil, fmt.Errorf("can't create rights %w", err)
 	}
-	repo.logger.Info("Rights create success")
-	repo.logger.Debugf("id is %v\n", id)
+	r.logger.Info("Rights create success")
+	r.logger.Debugf("id is %v\n", id)
 	return id, nil
 }

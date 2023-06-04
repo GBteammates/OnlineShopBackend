@@ -14,21 +14,21 @@ import (
 var _ usecase.IOrderUsecase = (*orderUsecase)(nil)
 
 type orderUsecase struct {
-	orderStore usecase.OrderStore
-	logger     *zap.SugaredLogger
+	store  usecase.OrderStore
+	logger *zap.SugaredLogger
 }
 
-func NewOrderUsecase(orderStore usecase.OrderStore, logger *zap.SugaredLogger) *orderUsecase {
+func NewOrderUsecase(store usecase.OrderStore, logger *zap.SugaredLogger) *orderUsecase {
 	return &orderUsecase{
-		orderStore: orderStore,
-		logger:     logger,
+		store:  store,
+		logger: logger,
 	}
 }
 
-func (usecase *orderUsecase) CreateOrder(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
+func (u *orderUsecase) Create(ctx context.Context, cart *models.Cart, user models.User, address models.UserAddress) (*models.Order, error) {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return nil, fmt.Errorf("context closed")
 	default:
 		ordr := models.Order{
@@ -39,39 +39,39 @@ func (usecase *orderUsecase) CreateOrder(ctx context.Context, cart *models.Cart,
 			ShipmentTime: time.Now().Add(models.ProlongedShipmentPeriod),
 			Items:        append([]models.ItemWithQuantity{}[:0:0], cart.Items...),
 		}
-		res, err := usecase.orderStore.CreateOrder(ctx, &ordr)
+		res, err := u.store.Create(ctx, &ordr)
 		if err != nil {
-			usecase.logger.Errorf("can't add order to db %s", err)
+			u.logger.Errorf("can't add order to db %s", err)
 			return nil, fmt.Errorf("can't place order to db : %w", err)
 		}
-		usecase.logger.Debugf("order %s created", res.Id.String())
+		u.logger.Debugf("order %s created", res.Id.String())
 		return res, nil
 	}
 }
 
-func (usecase *orderUsecase) ChangeStatus(ctx context.Context, order *models.Order) error {
+func (u *orderUsecase) ChangeStatus(ctx context.Context, order *models.Order) error {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return fmt.Errorf("context closed")
 	default:
-		if err := usecase.orderStore.ChangeStatus(ctx, order); err != nil {
-			usecase.logger.Errorf("can't change status of order: %s", err)
+		if err := u.store.ChangeStatus(ctx, order); err != nil {
+			u.logger.Errorf("can't change status of order: %s", err)
 			return fmt.Errorf("can't change status of order: %w", err)
 		}
 	}
 	return nil
 }
-func (usecase *orderUsecase) GetOrdersByUser(ctx context.Context, user *models.User) ([]models.Order, error) {
+func (u *orderUsecase) List(ctx context.Context, user *models.User) ([]models.Order, error) {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return nil, fmt.Errorf("context closed")
 	default:
 		result := make([]models.Order, 0, 10)
-		resChan, err := usecase.orderStore.GetOrdersByUser(ctx, user)
+		resChan, err := u.store.List(ctx, user)
 		if err != nil {
-			usecase.logger.Errorf("can't get orders for user %s: %s", user.Id.String(), err)
+			u.logger.Errorf("can't get orders for user %s: %s", user.Id.String(), err)
 			return nil, fmt.Errorf("can't get orders for user %s: %w", user.Id.String(), err)
 		}
 		for ordr := range resChan {
@@ -80,43 +80,43 @@ func (usecase *orderUsecase) GetOrdersByUser(ctx context.Context, user *models.U
 		return result, nil
 	}
 }
-func (usecase *orderUsecase) DeleteOrder(ctx context.Context, order *models.Order) error {
+func (u *orderUsecase) Delete(ctx context.Context, order *models.Order) error {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return fmt.Errorf("context closed")
 	default:
-		if err := usecase.orderStore.DeleteOrder(ctx, order); err != nil {
-			usecase.logger.Error("can't delete order %s", err)
+		if err := u.store.Delete(ctx, order); err != nil {
+			u.logger.Error("can't delete order %s", err)
 			return fmt.Errorf("can't delete order %w", err)
 		}
 		return nil
 	}
 }
 
-func (usecase *orderUsecase) ChangeAddress(ctx context.Context, order *models.Order) error {
+func (u *orderUsecase) ChangeAddress(ctx context.Context, order *models.Order) error {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return fmt.Errorf("context closed")
 	default:
-		if err := usecase.orderStore.ChangeAddress(ctx, order); err != nil {
-			usecase.logger.Errorf("can't change address %s: ", err)
+		if err := u.store.ChangeAddress(ctx, order); err != nil {
+			u.logger.Errorf("can't change address %s: ", err)
 			return fmt.Errorf("can't change address %w: ", err)
 		}
 		return nil
 	}
 }
 
-func (usecase *orderUsecase) GetOrder(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+func (u *orderUsecase) Get(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 	select {
 	case <-ctx.Done():
-		usecase.logger.Error("context closed")
+		u.logger.Error("context closed")
 		return nil, fmt.Errorf("context closed")
 	default:
-		res, err := usecase.orderStore.GetOrderById(ctx, id)
+		res, err := u.store.Get(ctx, id)
 		if err != nil {
-			usecase.logger.Errorf("can't get order: %s", err)
+			u.logger.Errorf("can't get order: %s", err)
 			return nil, fmt.Errorf("can't get order: %w", err)
 		}
 		return &res, nil

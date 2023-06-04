@@ -12,43 +12,43 @@ import (
 	"go.uber.org/zap"
 )
 
-type orderRepo struct {
-	storage *PGres
-	logger  *zap.SugaredLogger
+type orderStore struct {
+	db     *PGres
+	logger *zap.SugaredLogger
 }
 
-var _ usecase.OrderStore = (*orderRepo)(nil)
+var _ usecase.OrderStore = (*orderStore)(nil)
 
-func NewOrderRepo(store *PGres, log *zap.SugaredLogger) *orderRepo {
-	return &orderRepo{
-		storage: store,
-		logger:  log,
+func NeworderStore(db *PGres, log *zap.SugaredLogger) *orderStore {
+	return &orderStore{
+		db:     db,
+		logger: log,
 	}
 }
 
-func (repo *orderRepo) CreateOrder(ctx context.Context, order *models.Order) (*models.Order, error) {
-	repo.logger.Debug("Enter in repository order Create with args: ctx, order: %v", order)
+func (r *orderStore) Create(ctx context.Context, order *models.Order) (*models.Order, error) {
+	r.logger.Debug("Enter in rsitory order Create with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return nil, fmt.Errorf("stopped with context")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 		if err != nil {
-			repo.logger.Errorf("can't create transaction: %s", err)
+			r.logger.Errorf("can't create transaction: %s", err)
 			return nil, fmt.Errorf("can't create transaction: %w", err)
 		}
 		defer func() {
 			if err != nil {
-				repo.logger.Errorf("transaction rolled back")
+				r.logger.Errorf("transaction rolled back")
 				if err = tx.Rollback(ctx); err != nil {
-					repo.logger.Errorf("can't rollback %s", err)
+					r.logger.Errorf("can't rollback %s", err)
 				}
 
 			} else {
-				repo.logger.Info("transaction commited")
+				r.logger.Info("transaction commited")
 				if err != tx.Commit(ctx) {
-					repo.logger.Errorf("can't commit %s", err)
+					r.logger.Errorf("can't commit %s", err)
 				}
 			}
 		}()
@@ -57,7 +57,7 @@ func (repo *orderRepo) CreateOrder(ctx context.Context, order *models.Order) (*m
 			fmt.Sprintf("%s -> %s -> %s -> %s", order.Address.Zipcode, order.Address.Country, order.Address.City, order.Address.Street))
 		err = row.Scan(&order.Id)
 		if err != nil {
-			repo.logger.Errorf("can't add new order: %w", err)
+			r.logger.Errorf("can't add new order: %w", err)
 			return nil, fmt.Errorf("can't add new order: %w", err)
 		}
 		query := `INSERT INTO order_items (order_id, item_id, item_quantity) VALUES`
@@ -68,87 +68,87 @@ func (repo *orderRepo) CreateOrder(ctx context.Context, order *models.Order) (*m
 		itemsString = itemsString[:len(itemsString)-1]
 		_, err = tx.Exec(ctx, fmt.Sprintf("%s %s;", query, itemsString))
 		if err != nil {
-			repo.logger.Errorf("can't add items to order: %s", err)
+			r.logger.Errorf("can't add items to order: %s", err)
 			return nil, fmt.Errorf("can't add items to order: %w", err)
 		}
 		return order, nil
 	}
 }
 
-func (repo *orderRepo) DeleteOrder(ctx context.Context, order *models.Order) error {
-	repo.logger.Debug("Enter in repository DeleteOrder() with args: ctx, order: %v", order)
+func (r *orderStore) Delete(ctx context.Context, order *models.Order) error {
+	r.logger.Debug("Enter in rsitory DeleteOrder() with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		tx, err := pool.BeginTx(ctx, pgx.TxOptions{})
 		defer func() {
 			if err != nil {
-				repo.logger.Errorf("transaction rolled back")
+				r.logger.Errorf("transaction rolled back")
 				if err = tx.Rollback(ctx); err != nil {
-					repo.logger.Errorf("can't rollback %s", err)
+					r.logger.Errorf("can't rollback %s", err)
 				}
 
 			} else {
-				repo.logger.Info("transaction commited")
+				r.logger.Info("transaction commited")
 				if err != tx.Commit(ctx) {
-					repo.logger.Errorf("can't commit %s", err)
+					r.logger.Errorf("can't commit %s", err)
 				}
 			}
 		}()
 		_, err = tx.Exec(ctx, `DELETE FROM order_items WHERE order_id=$1`, order.Id)
 		if err != nil {
-			repo.logger.Errorf("can't delete order items from order: %s", err)
+			r.logger.Errorf("can't delete order items from order: %s", err)
 			return fmt.Errorf("can't delete order items from order: %w", err)
 		}
 		_, err = tx.Exec(ctx, `DELETE FROM orders WHERE id=$1`, order.Id)
 		if err != nil {
-			repo.logger.Errorf("can't delete order: %s", err)
+			r.logger.Errorf("can't delete order: %s", err)
 			return fmt.Errorf("can't delete order: %w", err)
 		}
 		return nil
 	}
 }
-func (repo *orderRepo) ChangeAddress(ctx context.Context, order *models.Order) error {
-	repo.logger.Debug("Enter in repository order ChangeAddress() with args: ctx, order: %v", order)
+func (r *orderStore) ChangeAddress(ctx context.Context, order *models.Order) error {
+	r.logger.Debug("Enter in rsitory order ChangeAddress() with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		_, err := pool.Exec(ctx, `UPDATE orders SET address=$1 WHERE id=$2`,
 			fmt.Sprintf("%s -> %s -> %s -> %s", order.Address.Zipcode, order.Address.Country, order.Address.City, order.Address.Street), order.Id)
 		if err != nil {
-			repo.logger.Errorf("can't update address: %s", err)
+			r.logger.Errorf("can't update address: %s", err)
 			return fmt.Errorf("can't update address: %w", err)
 		}
 		return nil
 	}
 }
-func (repo *orderRepo) ChangeStatus(ctx context.Context, order *models.Order) error {
-	repo.logger.Debug("Enter in repository order ChangeStatus() with args: ctx, order: %v", order)
+func (r *orderStore) ChangeStatus(ctx context.Context, order *models.Order) error {
+	r.logger.Debug("Enter in rsitory order ChangeStatus() with args: ctx, order: %v", order)
 	select {
 	case <-ctx.Done():
 		return fmt.Errorf("context closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		_, err := pool.Exec(ctx, `UPDATE orders SET status=$1 WHERE id=$2`, order.Status, order.Id)
 		if err != nil {
-			repo.logger.Errorf("can't update status: %s", err)
+			r.logger.Errorf("can't update status: %s", err)
 			return fmt.Errorf("can't update status: %w", err)
 		}
 		return nil
 	}
 }
-func (repo *orderRepo) GetOrderById(ctx context.Context, id uuid.UUID) (models.Order, error) {
-	repo.logger.Debug("Enter in repository GetOrderByID() with args: ctx, id: %v", id)
+func (r *orderStore) Get(ctx context.Context, id uuid.UUID) (models.Order, error) {
+	r.logger.Debug("Enter in rsitory GetOrderByID() with args: ctx, id: %v", id)
 	select {
 	case <-ctx.Done():
-		repo.logger.Errorf("context closed")
+		r.logger.Errorf("context closed")
 		return models.Order{}, fmt.Errorf("context closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		ordr := models.Order{
 			Items: make([]models.ItemWithQuantity, 0),
 		}
@@ -157,7 +157,7 @@ func (repo *orderRepo) GetOrderById(ctx context.Context, id uuid.UUID) (models.O
 				orders.status, orders.address, order_items.item_quantity from items INNER JOIN categories ON categories.id=category  INNER JOIN order_items ON
 				items.id=order_items.item_id INNER JOIN orders ON orders.id=order_items.order_id and orders.id = $1 ORDER BY order_id ASC`, id)
 		if err != nil {
-			repo.logger.Errorf("can't get order from db: %s", err)
+			r.logger.Errorf("can't get order from db: %s", err)
 			return ordr, fmt.Errorf("can't get order from db: %w", err)
 		}
 		defer rows.Close()
@@ -166,12 +166,12 @@ func (repo *orderRepo) GetOrderById(ctx context.Context, id uuid.UUID) (models.O
 			item := models.ItemWithQuantity{}
 			if err := rows.Scan(&item.Id, &item.Title, &item.Category.Id, &item.Category.Name, &item.Category.Description, &item.Category.Image,
 				&item.Description, &item.Price, &item.Vendor, &item.Images, &ordr.Id, &ordr.User.Id, &ordr.Status, &ordr.CreatedAt, &ordr.ShipmentTime, &ordr.Status, &address, &item.Quantity); err != nil {
-				repo.logger.Errorf("can't scan data to order object: %w", err)
+				r.logger.Errorf("can't scan data to order object: %w", err)
 				return models.Order{}, err
 			}
 			ordr.Items = append(ordr.Items, item)
 		}
-		repo.logger.Debug(address)
+		r.logger.Debug(address)
 		splitted := strings.Split(address, " -> ")
 		ordr.Address = models.UserAddress{
 			Zipcode: splitted[0],
@@ -184,14 +184,14 @@ func (repo *orderRepo) GetOrderById(ctx context.Context, id uuid.UUID) (models.O
 
 }
 
-func (repo *orderRepo) GetOrdersByUser(ctx context.Context, user *models.User) (chan models.Order, error) {
-	repo.logger.Debug("Enter in repository GetOrdersForUser() with args: ctx, user: %v", user)
+func (r *orderStore) List(ctx context.Context, user *models.User) (chan models.Order, error) {
+	r.logger.Debug("Enter in rsitory GetOrdersForUser() with args: ctx, user: %v", user)
 	select {
 	case <-ctx.Done():
-		repo.logger.Errorf("context closed")
+		r.logger.Errorf("context closed")
 		return nil, fmt.Errorf("context closed")
 	default:
-		pool := repo.storage.GetPool()
+		pool := r.db.GetPool()
 		resChan := make(chan models.Order, 1)
 		go func() {
 			defer close(resChan)
@@ -200,7 +200,7 @@ func (repo *orderRepo) GetOrdersByUser(ctx context.Context, user *models.User) (
 			orders.status, orders.address, order_items.item_quantity from items INNER JOIN categories ON categories.id=category  INNER JOIN order_items ON
 			items.id=order_items.item_id INNER JOIN orders ON orders.id=order_items.order_id and orders.user_id = $1 ORDER BY order_id ASC`, user.Id)
 			if err != nil {
-				repo.logger.Errorf("can't get order from db: %s", err)
+				r.logger.Errorf("can't get order from db: %s", err)
 				return
 			}
 			defer rows.Close()
@@ -213,7 +213,7 @@ func (repo *orderRepo) GetOrdersByUser(ctx context.Context, user *models.User) (
 				order := models.Order{}
 				if err := rows.Scan(&item.Id, &item.Title, &item.Category.Id, &item.Category.Name, &item.Category.Description, &item.Category.Image,
 					&item.Description, &item.Price, &item.Vendor, &item.Images, &order.Id, &order.User.Id, &order.Status, &order.CreatedAt, &order.ShipmentTime, &order.Status, &address, &item.Quantity); err != nil {
-					repo.logger.Errorf("can't scan data to order object: %w", err)
+					r.logger.Errorf("can't scan data to order object: %w", err)
 					return
 				}
 				if prevOrder.Id == uuid.Nil {
@@ -223,7 +223,7 @@ func (repo *orderRepo) GetOrdersByUser(ctx context.Context, user *models.User) (
 					resChan <- prevOrder
 					prevOrder = order
 				}
-				repo.logger.Debug(address)
+				r.logger.Debug(address)
 				splitted := strings.Split(address, " -> ")
 				prevOrder.Address = models.UserAddress{
 					Zipcode: splitted[0],

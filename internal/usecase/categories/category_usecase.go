@@ -13,66 +13,65 @@ import (
 
 var _ usecase.ICategoryUsecase = (*categoryUsecase)(nil)
 
-const (
-	categoriesListKey = "CategoriesList"
-	createOp          = "create"
-	updateOp          = "update"
-	deleteOp          = "delete"
-)
-
 type categoryUsecase struct {
-	categoryStore   usecase.CategoryStore
-	categoriesCache usecase.ICategoriesCache
-	filestorage     usecase.FileStorager
-	logger          *zap.Logger
+	timeout     time.Duration
+	store       usecase.CategoryStore
+	cache       usecase.ICategoriesCache
+	filestorage usecase.Filestorage
+	logger      *zap.SugaredLogger
 }
 
-func NewCategoryUsecase(store usecase.CategoryStore, cache usecase.ICategoriesCache, filestorage usecase.FileStorager, logger *zap.Logger) *categoryUsecase {
+func New(
+	store usecase.CategoryStore,
+	cache usecase.ICategoriesCache,
+	filestorage usecase.Filestorage,
+	logger *zap.SugaredLogger,
+) *categoryUsecase {
 	logger.Debug("Enter in usecase NewcategoryUsecase()")
 	return &categoryUsecase{
-		categoryStore:   store,
-		categoriesCache: cache,
-		filestorage:     filestorage,
-		logger:          logger}
+		store:       store,
+		cache:       cache,
+		filestorage: filestorage,
+		logger:      logger}
 }
 
-// CreateCategory call database method and returns id of created category or error
-func (usecase *categoryUsecase) CreateCategory(ctx context.Context, category *models.Category) (uuid.UUID, error) {
-	usecase.logger.Sugar().Debugf("Enter in usecase CreateCategory() with args: ctx, category: %v", category)
-	id, err := usecase.categoryStore.CreateCategory(ctx, category)
+// Create call database method and returns id of created category or error
+func (u *categoryUsecase) Create(ctx context.Context, category *models.Category) (uuid.UUID, error) {
+	u.logger.Debugf("Enter in usecase Create() with args: ctx, category: %v", category)
+	id, err := u.store.Create(ctx, category)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("error on create category: %w", err)
 	}
 	category.Id = id
-	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, createOp)
+	err = u.cache.UpdateCache(ctx, category, models.CreateOp)
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+		u.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cache success")
+		u.logger.Info("Update cache success")
 	}
 	return id, nil
 }
 
-// UpdateCategory call database method to update category and returns error or nil
-func (usecase *categoryUsecase) UpdateCategory(ctx context.Context, category *models.Category) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase UpdateCategory() with args: ctx, category: %v", category)
-	err := usecase.categoryStore.UpdateCategory(ctx, category)
+// Update call database method to update category and returns error or nil
+func (u *categoryUsecase) Update(ctx context.Context, category *models.Category) error {
+	u.logger.Debugf("Enter in usecase Update() with args: ctx, category: %v", category)
+	err := u.store.Update(ctx, category)
 	if err != nil {
 		return fmt.Errorf("error on update category: %w", err)
 	}
-	err = usecase.categoriesCache.UpdateCategoryCache(ctx, category, updateOp)
+	err = u.cache.UpdateCache(ctx, category, models.UpdateOp)
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+		u.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	} else {
-		usecase.logger.Info("Update cache success")
+		u.logger.Info("Update cache success")
 	}
 	return nil
 }
 
 // GetCategory call database and returns *models.Category with given id or returns error
-func (usecase *categoryUsecase) GetCategory(ctx context.Context, id uuid.UUID) (*models.Category, error) {
-	usecase.logger.Sugar().Debugf("Enter in usecase GetCategory() with args: ctx, id: %v", id)
-	category, err := usecase.categoryStore.GetCategory(ctx, id)
+func (u *categoryUsecase) Get(ctx context.Context, param string) (*models.Category, error) {
+	u.logger.Debugf("Enter in usecase Get() with args: ctx, param", param)
+	category, err := u.store.Get(ctx, param)
 	if err != nil {
 		return &models.Category{}, fmt.Errorf("error on get category: %w", err)
 	}
@@ -80,76 +79,56 @@ func (usecase *categoryUsecase) GetCategory(ctx context.Context, id uuid.UUID) (
 }
 
 // GetCategoryList call database method and returns chan with all models.Category or error
-func (usecase *categoryUsecase) GetCategoryList(ctx context.Context) ([]models.Category, error) {
-	usecase.logger.Debug("Enter in usecase GetCategoryList() with args: ctx")
+func (u *categoryUsecase) List(ctx context.Context) ([]models.Category, error) {
+	u.logger.Debug("Enter in usecase List()")
 
-	// Context with timeout so as not to wait for an answer from the cache for too long
-	ctxT, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-	defer cancel()
-
-	// Сheck whether there is a cache with a list of categories
-	if ok := usecase.categoriesCache.CheckCache(ctxT, categoriesListKey); !ok {
-		// If cache does not exist, request a list of categories from the database
-		categoryIncomingChan, err := usecase.categoryStore.GetCategoryList(ctx)
-		if err != nil {
-			return nil, err
-		}
-		categories := make([]models.Category, 0, 100)
-		for category := range categoryIncomingChan {
-			categories = append(categories, category)
-		}
-		// Create a cache with a list of categories
-		err = usecase.categoriesCache.CreateCategoriesListСache(ctxT, categories, categoriesListKey)
-		if err != nil {
-			usecase.logger.Sugar().Warnf("error on create categories list cache with key: %s, error: %v", categoriesListKey, err)
-		} else {
-			usecase.logger.Sugar().Infof("Create categories list cache with key: %s success", categoriesListKey)
-		}
-	}
-
-	// Get a list of categories from cache
-	categories, err := usecase.categoriesCache.GetCategoriesListCache(ctxT, categoriesListKey)
+	categories, err := u.getCategories(ctx)
 	if err != nil {
-		usecase.logger.Sugar().Warnf("error on get cache with key: %s, err: %v", categoriesListKey, err)
-		// If error on get cache, request a list of categories from the database
-		categoryIncomingChan, err := usecase.categoryStore.GetCategoryList(ctx)
-		if err != nil {
-			return nil, err
-		}
-		dbCategories := make([]models.Category, 0, 100)
-		for category := range categoryIncomingChan {
-			dbCategories = append(dbCategories, category)
-			categories = dbCategories
-		}
-		usecase.logger.Info("Get category list from db success")
-		return categories, nil
+		return nil, err
 	}
-	usecase.logger.Info("Get category list from cache success")
 	return categories, nil
 }
 
 // DeleteCategory call database method for deleting category
-func (usecase *categoryUsecase) DeleteCategory(ctx context.Context, id uuid.UUID) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase DeleteCategory() with args: ctx, id: %v", id)
-	err := usecase.categoryStore.DeleteCategory(ctx, id)
+func (u *categoryUsecase) Delete(ctx context.Context, id uuid.UUID) error {
+	u.logger.Debugf("Enter in usecase Delete() with args: ctx, id: %v", id)
+	err := u.store.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
-	err = usecase.categoriesCache.UpdateCategoryCache(ctx, &models.Category{Id: id}, deleteOp)
+	err = u.cache.UpdateCache(ctx, &models.Category{Id: id}, models.DeleteOp)
 	if err != nil {
-		usecase.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+		u.logger.Error(fmt.Sprintf("error on update cache: %v", err))
 	}
-	usecase.logger.Info("Delete category success")
+	u.logger.Info("Delete category success")
 	return nil
 }
 
-// GetCategoryByName call database method for get category by name
-func (usecase *categoryUsecase) GetCategoryByName(ctx context.Context, name string) (*models.Category, error) {
-	usecase.logger.Sugar().Debugf("Enter in usecase GetCategoryByName() with args: ctx, name: %s", name)
-	category, err := usecase.categoryStore.GetCategoryByName(ctx, name)
-	if err != nil {
-		return nil, err
+func (u *categoryUsecase) getCategories(ctx context.Context) ([]models.Category, error) {
+	u.logger.Debugf("Enter in usecasesecae getCategories()")
+
+	// Context with timeout so as not to wait for an answer from the cache for too long
+	ctxT, cancel := context.WithTimeout(ctx, u.timeout*time.Millisecond)
+	defer cancel()
+
+	categories, err := u.cache.CategoriesFromCache(ctxT, models.CategoriesList)
+	if err == nil {
+		return categories, nil
 	}
-	usecase.logger.Info("Get category by name success")
-	return category, nil
+	if err != nil {
+		u.logger.Warnf("error on categories from cache: %v", err)
+	}
+	categoriesChan, err := u.store.List(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error on get categories list from store: %w", err)
+	}
+	categories = make([]models.Category, 100)
+	for category := range categoriesChan {
+		categories = append(categories, category)
+	}
+	err = u.cache.CategoriesToCache(ctx, categories)
+	if err != nil {
+		u.logger.Warnf("error on categories to cache: %v", err)
+	}
+	return categories, nil
 }

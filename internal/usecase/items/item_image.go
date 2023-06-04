@@ -9,16 +9,16 @@ import (
 	"github.com/google/uuid"
 )
 
-func (usecase *itemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase UploadImage() with args: ctx, id: %v, name: %s, file", id, name)
+func (u *itemUsecase) UploadImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
+	u.logger.Debugf("Enter in usecase UploadImage() with args: ctx, id: %v, name: %s, file", id, name)
 	// Request item for which the picture is installed
-	item, err := usecase.itemStore.GetItem(ctx, id)
+	item, err := u.store.Get(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get item: %w", err)
 	}
 
 	// Put the picture in the file storage and get it url
-	path, err := usecase.filestorage.PutItemImage(id.String(), name, file)
+	path, err := u.filestorage.PutItemImage(id.String(), name, file)
 	if err != nil {
 		return fmt.Errorf("error on put image to filestorage: %w", err)
 	}
@@ -32,31 +32,31 @@ func (usecase *itemUsecase) UploadItemImage(ctx context.Context, id uuid.UUID, n
 		}
 	}
 
-	err = usecase.itemStore.UpdateItem(ctx, item)
+	err = u.store.Update(ctx, item)
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.itemCache.UpdateCache(ctx, &models.ItemsCacheOptions{
-		Op:      updateOp,
-		Kind:    []string{list, inCategory},
+	err = u.cache.UpdateCache(ctx, &models.CacheOptions{
+		Op:      models.UpdateOp,
+		Kind:    []string{models.List, models.InCategory},
 		NewItem: item,
 	})
 	if err != nil {
-		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
+		u.logger.Debugf("error on update cache: %v", err)
 	}
 	return nil
 }
 
-func (usecase *itemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, name string) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItemImage() with args: ctx, id: %v, name: %s", id, name)
+func (u *itemUsecase) DeleteImage(ctx context.Context, id uuid.UUID, name string) error {
+	u.logger.Debugf("Enter in usecase DeleteItemImage() with args: ctx, id: %v, name: %s", id, name)
 
 	// Get item from which the picture is deleted
-	item, err := usecase.itemStore.GetItem(ctx, id)
+	item, err := u.store.Get(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get item: %w", err)
 	}
 
-	err = usecase.filestorage.DeleteItemImage(id.String(), name)
+	err = u.filestorage.DeleteItemImage(id.String(), name)
 	if err != nil {
 		return fmt.Errorf("error on delete image from filestorage: %w", err)
 	}
@@ -73,35 +73,35 @@ func (usecase *itemUsecase) DeleteItemImage(ctx context.Context, id uuid.UUID, n
 	if len(item.Images) == 0 {
 		item.Images = append(item.Images, "")
 	}
-	err = usecase.itemStore.UpdateItem(ctx, item)
+	err = u.store.Update(ctx, item)
 	if err != nil {
 		return fmt.Errorf("error on update item: %w", err)
 	}
-	err = usecase.itemCache.UpdateCache(ctx, &models.ItemsCacheOptions{
-		Op:      updateOp,
-		Kind:    []string{list, inCategory},
+	err = u.cache.UpdateCache(ctx, &models.CacheOptions{
+		Op:      models.UpdateOp,
+		Kind:    []string{models.List, models.InCategory},
 		NewItem: item,
 	})
 	if err != nil {
-		usecase.logger.Sugar().Debugf("error on update cache: %v", err)
+		u.logger.Debugf("error on update cache: %v", err)
 	}
 	return nil
 }
 
-func (usecase *itemUsecase) GetItemsImagesList(ctx context.Context) ([]*models.FileInfo, error) {
-	usecase.logger.Debug("Enter in usecase GetItemsImagesList()")
+func (u *itemUsecase) ListImages(ctx context.Context) ([]*models.FileInfo, error) {
+	u.logger.Debug("Enter in usecase GetItemsImagesList()")
 
-	result, err := usecase.filestorage.GetItemsImagesList()
+	result, err := u.filestorage.GetItemsImagesList()
 	if err != nil {
 		return nil, fmt.Errorf("error on get items images list: %w", err)
 	}
 	return result, nil
 }
 
-func (usecase *itemUsecase) DeleteItemImagesFolderById(ctx context.Context, id uuid.UUID) error {
-	usecase.logger.Sugar().Debugf("Enter in usecase DeleteItemImagesFolderById() with args: ctx, id: %v", id)
+func (u *itemUsecase) DeleteImagesFolder(ctx context.Context, id uuid.UUID) error {
+	u.logger.Debugf("Enter in usecase DeleteItemImagesFolderById() with args: ctx, id: %v", id)
 
-	err := usecase.filestorage.DeleteItemImagesFolderById(id.String())
+	err := u.filestorage.DeleteItemImagesFolderById(id.String())
 	if err != nil {
 		return fmt.Errorf("error on delete item images folder: %w", err)
 	}

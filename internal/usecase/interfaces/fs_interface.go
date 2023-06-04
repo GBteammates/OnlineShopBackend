@@ -2,7 +2,7 @@ package usecase
 
 import "OnlineShopBackend/internal/models"
 
-type FileStorager interface {
+type Filestorage interface {
 	PutItemImage(id string, filename string, file []byte) (string, error)
 	PutCategoryImage(id string, filename string, file []byte) (string, error)
 	DeleteItemImage(id string, filename string) error

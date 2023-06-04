@@ -26,6 +26,7 @@ type Config struct {
 	ReadTimeout       int    `toml:"read_timeout" env:"READ_TIMEOUT" envDefault:"30"`
 	WriteTimeout      int    `toml:"write_timeout" env:"WRITE_TIMEOUT" envDefault:"30"`
 	ReadHeaderTimeout int    `toml:"read_header_timeout" env:"READ_HEADER_TIMEOUT" envDefault:"30"`
+	CacheTimeout      int    `toml:"cache_timeout env:"CACHE_TIMEOUT" envDefault:"100"`
 }
 
 // NewConfig() initializes the configuration
