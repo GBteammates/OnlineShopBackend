@@ -4,7 +4,7 @@ import (
 	"OnlineShopBackend/internal/models"
 	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -13,126 +13,124 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	testId         = uuid.New()
-	testModelsCart = &models.Cart{
-		Id:    testId,
-		Items: testItems,
-	}
-	testItem = models.ItemWithQuantity{
-		Quantity: 1,
-	}
-	testItems = []models.ItemWithQuantity{
-		testItem,
-	}
-)
-
-func TestGetCart(t *testing.T) {
+func TestGet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCartStore(ctrl)
+	usecase := NewCartUsecase(store, logger)
 	ctx := context.Background()
 
-	cartRepo.EXPECT().GetCart(ctx, testId).Return(nil, fmt.Errorf("error"))
-	res, err := usecase.GetCart(ctx, testId)
-	require.Error(t, err)
-	require.Nil(t, res)
-
-	cartRepo.EXPECT().GetCart(ctx, testId).Return(testModelsCart, nil)
-	res, err = usecase.GetCart(ctx, testId)
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, res, testModelsCart)
+	t.Run("error get cart", func(t *testing.T) {
+		id := uuid.New()
+		testErr := errors.New("error")
+		store.EXPECT().Get(ctx, id).Return(nil, testErr)
+		res, err := usecase.Get(ctx, id)
+		require.Error(t, err)
+		require.Nil(t, res)
+	})
+	t.Run("success get cart", func(t *testing.T) {
+		id := uuid.New()
+		store.EXPECT().Get(ctx, id).Return(&models.Cart{}, nil)
+		res, err := usecase.Get(ctx, id)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+	})
 }
 
-func TestGetCartByUserId(t *testing.T) {
+func TestCartByUser(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCartStore(ctrl)
+	usecase := NewCartUsecase(store, logger)
 	ctx := context.Background()
-
-	cartRepo.EXPECT().GetCartByUserId(ctx, testId).Return(nil, fmt.Errorf("error"))
-	res, err := usecase.GetCartByUserId(ctx, testId)
-	require.Error(t, err)
-	require.Nil(t, res)
-
-	cartRepo.EXPECT().GetCartByUserId(ctx, testId).Return(testModelsCart, nil)
-	res, err = usecase.GetCartByUserId(ctx, testId)
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, res, testModelsCart)
+	t.Run("error get cart by user id", func(t *testing.T) {
+		id := uuid.New()
+		testErr := errors.New("error")
+		store.EXPECT().CartByUserId(ctx, id).Return(nil, testErr)
+		res, err := usecase.CartByUserId(ctx, id)
+		require.Error(t, err)
+		require.Nil(t, res)
+	})
+	t.Run("success get cart by user id", func(t *testing.T) {
+		id := uuid.New()
+		store.EXPECT().CartByUserId(ctx, id).Return(&models.Cart{}, nil)
+		res, err := usecase.CartByUserId(ctx, id)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+	})
 }
 
-func TestDeleteItemFromCart(t *testing.T) {
+func TestDeleteItem(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCartStore(ctrl)
+	usecase := NewCartUsecase(store, logger)
 	ctx := context.Background()
-
-	cartRepo.EXPECT().DeleteItemFromCart(ctx, testId, testId).Return(fmt.Errorf("error"))
-	err := usecase.DeleteItemFromCart(ctx, testId, testId)
-	require.Error(t, err)
-
-	cartRepo.EXPECT().DeleteItemFromCart(ctx, testId, testId).Return(nil)
-	err = usecase.DeleteItemFromCart(ctx, testId, testId)
-	require.NoError(t, err)
+	t.Run("error delete item", func(t *testing.T) {
+		cartId := uuid.New()
+		userId := uuid.New()
+		testErr := errors.New("error")
+		store.EXPECT().DeleteItem(ctx, cartId, userId).Return(testErr)
+		err := usecase.DeleteItem(ctx, cartId, userId)
+		require.Error(t, err)
+	})
+	t.Run("success delete item", func(t *testing.T) {
+		cartId := uuid.New()
+		userId := uuid.New()
+		store.EXPECT().DeleteItem(ctx, cartId, userId).Return(nil)
+		err := usecase.DeleteItem(ctx, cartId, userId)
+		require.NoError(t, err)
+	})
 }
 
 func TestCreate(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCartStore(ctrl)
+	usecase := NewCartUsecase(store, logger)
 	ctx := context.Background()
-
-	cartRepo.EXPECT().CreateCart(ctx, testId).Return(uuid.Nil, fmt.Errorf("error"))
-	res, err := usecase.CreateCart(ctx, testId)
-	require.Error(t, err)
-	require.Equal(t, res, uuid.Nil)
-
-	cartRepo.EXPECT().CreateCart(ctx, testId).Return(testId, nil)
-	res, err = usecase.CreateCart(ctx, testId)
-	require.NoError(t, err)
-	require.Equal(t, res, testId)
+	t.Run("error create cart", func(t *testing.T) {
+		userId := uuid.New()
+		testErr := errors.New("error")
+		store.EXPECT().Create(ctx, userId).Return(uuid.Nil, testErr)
+		res, err := usecase.Create(ctx, userId)
+		require.Error(t, err)
+		require.Equal(t, uuid.Nil, res)
+	})
+	t.Run("success create cart", func(t *testing.T) {
+		userId := uuid.New()
+		cartId := uuid.New()
+		store.EXPECT().Create(ctx, userId).Return(cartId, nil)
+		res, err := usecase.Create(ctx, userId)
+		require.NoError(t, err)
+		require.Equal(t, cartId, res)
+	})
 }
 
-func TestAddItemToCart(t *testing.T) {
+func TestAddItem(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCartStore(ctrl)
+	usecase := NewCartUsecase(store, logger)
 	ctx := context.Background()
-
-	cartRepo.EXPECT().AddItemToCart(ctx, testId, testId).Return(fmt.Errorf("error"))
-	err := usecase.AddItemToCart(ctx, testId, testId)
-	require.Error(t, err)
-
-	cartRepo.EXPECT().AddItemToCart(ctx, testId, testId).Return(nil)
-	err = usecase.AddItemToCart(ctx, testId, testId)
-	require.NoError(t, err)
-}
-
-func TestDeleteCart(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	logger := zap.L()
-	cartRepo := mocks.NewMockCartStore(ctrl)
-	usecase := NewCartUsecase(cartRepo, logger)
-	ctx := context.Background()
-
-	cartRepo.EXPECT().DeleteCart(ctx, testId).Return(fmt.Errorf("error"))
-	err := usecase.DeleteCart(ctx, testId)
-	require.Error(t, err)
-
-	cartRepo.EXPECT().DeleteCart(ctx, testId).Return(nil)
-	err = usecase.DeleteCart(ctx, testId)
-	require.NoError(t, err)
+	t.Run("error add item", func(t *testing.T) {
+		cartId := uuid.New()
+		userId := uuid.New()
+		testErr := errors.New("error")
+		store.EXPECT().AddItem(ctx, cartId, userId).Return(testErr)
+		err := usecase.AddItem(ctx, cartId, userId)
+		require.Error(t, err)
+	})
+	t.Run("success add item", func(t *testing.T) {
+		cartId := uuid.New()
+		userId := uuid.New()
+		store.EXPECT().AddItem(ctx, cartId, userId).Return(nil)
+		err := usecase.AddItem(ctx, cartId, userId)
+		require.NoError(t, err)
+	})
 }
