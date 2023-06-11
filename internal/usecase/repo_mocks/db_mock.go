@@ -280,6 +280,21 @@ func (m *MockCategoryStore) EXPECT() *MockCategoryStoreMockRecorder {
 	return m.recorder
 }
 
+// CategoryByName mocks base method.
+func (m *MockCategoryStore) CategoryByName(ctx context.Context, name string) (*models.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CategoryByName", ctx, name)
+	ret0, _ := ret[0].(*models.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CategoryByName indicates an expected call of CategoryByName.
+func (mr *MockCategoryStoreMockRecorder) CategoryByName(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CategoryByName", reflect.TypeOf((*MockCategoryStore)(nil).CategoryByName), ctx, name)
+}
+
 // Create mocks base method.
 func (m *MockCategoryStore) Create(ctx context.Context, category *models.Category) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
@@ -310,18 +325,18 @@ func (mr *MockCategoryStoreMockRecorder) Delete(ctx, id interface{}) *gomock.Cal
 }
 
 // Get mocks base method.
-func (m *MockCategoryStore) Get(ctx context.Context, param string) (*models.Category, error) {
+func (m *MockCategoryStore) Get(ctx context.Context, id uuid.UUID) (*models.Category, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", ctx, param)
+	ret := m.ctrl.Call(m, "Get", ctx, id)
 	ret0, _ := ret[0].(*models.Category)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockCategoryStoreMockRecorder) Get(ctx, param interface{}) *gomock.Call {
+func (mr *MockCategoryStoreMockRecorder) Get(ctx, id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCategoryStore)(nil).Get), ctx, param)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockCategoryStore)(nil).Get), ctx, id)
 }
 
 // List mocks base method.

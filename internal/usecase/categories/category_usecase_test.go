@@ -4,7 +4,7 @@ import (
 	"OnlineShopBackend/internal/models"
 	mocks "OnlineShopBackend/internal/usecase/repo_mocks"
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -13,285 +13,226 @@ import (
 	"go.uber.org/zap"
 )
 
-var (
-	testModelCategory = &models.Category{
-		Name: "test name",
+func TestCreate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
+	cache := mocks.NewMockICategoriesCache(ctrl)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	id := uuid.New()
+	category := &models.Category{
+		Name:        "testName",
+		Description: "testDescription",
+		Image:       "testImage",
 	}
-	testModelCategoryWithId = &models.Category{
-		Id:   testId,
-		Name: "test name",
+	testErr := errors.New("error")
+	t.Run("error store create category", func(t *testing.T) {
+		store.EXPECT().Create(ctx, category).Return(uuid.Nil, testErr)
+		res, err := usecase.Create(ctx, category)
+		require.Error(t, err)
+		require.Equal(t, uuid.Nil, res)
+	})
+	t.Run("success create category", func(t *testing.T) {
+		store.EXPECT().Create(ctx, category).Return(id, nil)
+		category.Id = id
+		cache.EXPECT().UpdateCache(ctx, category, models.CreateOp).Return(nil)
+		res, err := usecase.Create(ctx, category)
+		require.NoError(t, err)
+		require.Equal(t, id, res)
+	})
+}
+
+func TestUpdate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
+	cache := mocks.NewMockICategoriesCache(ctrl)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	id := uuid.New()
+	category := &models.Category{
+		Id:          id,
+		Name:        "testName",
+		Description: "testDescription",
+		Image:       "testImage",
 	}
-	emptyCategory = &models.Category{}
-	testId        = uuid.New()
-	testChan      = make(chan models.Category, 2)
-
-	categories = []models.Category{*testModelCategoryWithId}
-)
-
-func TestCreateCategory(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
-	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	categoryRepo.EXPECT().CreateCategory(ctx, testModelCategory).Return(testId, nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	res, err := usecase.CreateCategory(ctx, testModelCategory)
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, res, testId)
-
-	emptyCategories := make([]models.Category, 0)
-	categories := []models.Category{*testModelCategoryWithId}
-	categoryRepo.EXPECT().CreateCategory(ctx, testModelCategory).Return(testId, nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(emptyCategories, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(nil)
-	res, err = usecase.CreateCategory(ctx, testModelCategory)
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, res, testId)
-
-	err = fmt.Errorf("error on create category")
-	categoryRepo.EXPECT().CreateCategory(ctx, testModelCategory).Return(uuid.Nil, err)
-	res, err = usecase.CreateCategory(ctx, testModelCategory)
-	require.Error(t, err)
-	require.Equal(t, res, uuid.Nil)
+	testErr := errors.New("error")
+	t.Run("error store update category", func(t *testing.T) {
+		store.EXPECT().Update(ctx, category).Return(testErr)
+		err := usecase.Update(ctx, category)
+		require.Error(t, err)
+	})
+	t.Run("success update category", func(t *testing.T) {
+		store.EXPECT().Update(ctx, category).Return(nil)
+		cache.EXPECT().UpdateCache(ctx, category, models.UpdateOp).Return(nil)
+		err := usecase.Update(ctx, category)
+		require.NoError(t, err)
+	})
 }
 
-func TestUpdateCategory(t *testing.T) {
+func TestGet(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
 	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	categoryRepo.EXPECT().UpdateCategory(ctx, testModelCategoryWithId).Return(nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	err := usecase.UpdateCategory(ctx, testModelCategoryWithId)
-	require.NoError(t, err)
-
-	categories := []models.Category{*testModelCategoryWithId}
-	categoryRepo.EXPECT().UpdateCategory(ctx, testModelCategoryWithId).Return(nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(nil)
-	err = usecase.UpdateCategory(ctx, testModelCategoryWithId)
-	require.NoError(t, err)
-
-	categoryRepo.EXPECT().UpdateCategory(ctx, testModelCategoryWithId).Return(fmt.Errorf("error on update"))
-	err = usecase.UpdateCategory(ctx, testModelCategoryWithId)
-	require.Error(t, err)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	id := uuid.New()
+	category := &models.Category{
+		Id:          id,
+		Name:        "testName",
+		Description: "testDescription",
+		Image:       "testImage",
+	}
+	testErr := errors.New("error")
+	t.Run("error get category", func(t *testing.T) {
+		store.EXPECT().Get(ctx, id).Return(nil, testErr)
+		res, err := usecase.Get(ctx, id)
+		require.Error(t, err)
+		require.Equal(t, &models.Category{}, res)
+	})
+	t.Run("success get category", func(t *testing.T) {
+		store.EXPECT().Get(ctx, id).Return(category, nil)
+		res, err := usecase.Get(ctx, id)
+		require.NoError(t, err)
+		require.Equal(t, category, res)
+	})
 }
 
-func TestGetCategory(t *testing.T) {
+func TestCategoryByName(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
 	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	res, err := usecase.GetCategory(ctx, testId)
-	require.NoError(t, err)
-	require.Equal(t, res, testModelCategoryWithId)
-
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(emptyCategory, fmt.Errorf("error on get category"))
-	res, err = usecase.GetCategory(ctx, testId)
-	require.Error(t, err)
-	require.Equal(t, res, emptyCategory)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	name := "name"
+	id := uuid.New()
+	category := &models.Category{
+		Id:          id,
+		Name:        name,
+		Description: "testDescription",
+		Image:       "testImage",
+	}
+	testErr := errors.New("error")
+	t.Run("error get category by name", func(t *testing.T) {
+		store.EXPECT().CategoryByName(ctx, name).Return(nil, testErr)
+		res, err := usecase.CategoryByName(ctx, name)
+		require.Error(t, err)
+		require.Equal(t, &models.Category{}, res)
+	})
+	t.Run("success get category", func(t *testing.T) {
+		store.EXPECT().CategoryByName(ctx, name).Return(category, nil)
+		res, err := usecase.CategoryByName(ctx, name)
+		require.NoError(t, err)
+		require.Equal(t, category, res)
+	})
 }
 
-func TestGetCategoryList(t *testing.T) {
+func TestList(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ctx := gomock.Any()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
 	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	res, err := usecase.GetCategoryList(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, res, categories)
-
-	testChan0 := make(chan models.Category, 1)
-	testChan0 <- *testModelCategoryWithId
-	close(testChan0)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(nil, fmt.Errorf("error"))
-	categoryRepo.EXPECT().GetCategoryList(ctx).Return(testChan0, fmt.Errorf("error"))
-	res, err = usecase.GetCategoryList(context.Background())
-	require.Error(t, err)
-	require.Nil(t, res)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(nil, fmt.Errorf("error"))
-	categoryRepo.EXPECT().GetCategoryList(ctx).Return(testChan0, nil)
-	res, err = usecase.GetCategoryList(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, res, categories)
-
-	testChan <- *testModelCategoryWithId
-	close(testChan)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	categoryRepo.EXPECT().GetCategoryList(ctx).Return(testChan, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	res, err = usecase.GetCategoryList(context.Background())
-	require.NoError(t, err)
-	require.Equal(t, res, categories)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	categoryRepo.EXPECT().GetCategoryList(ctx).Return(testChan, fmt.Errorf("error"))
-	res, err = usecase.GetCategoryList(context.Background())
-	require.Error(t, err)
-	require.Nil(t, res)
-
-	testChan2 := make(chan models.Category, 1)
-	testChan2 <- *testModelCategoryWithId
-	close(testChan2)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	categoryRepo.EXPECT().GetCategoryList(ctx).Return(testChan2, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(fmt.Errorf("error"))
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	res, err = usecase.GetCategoryList(context.Background())
-	require.NoError(t, err)
-	require.NotNil(t, res)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	categories := []models.Category{}
+	ch := make(chan models.Category, 1)
+	testErr := errors.New("error")
+	t.Run("error on list categories", func(t *testing.T) {
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(nil, testErr)
+		store.EXPECT().List(ctx).Return(ch, testErr)
+		res, err := usecase.List(ctx)
+		require.Error(t, err)
+		require.Nil(t, res)
+	})
+	t.Run("success list categories", func(t *testing.T) {
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(categories, nil)
+		res, err := usecase.List(ctx)
+		require.NoError(t, err)
+		require.Equal(t, categories, res)
+	})
 }
 
-func TestUpdateCategoryCache(t *testing.T) {
+func TestDelete(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
 	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	err := usecase.UpdateCache(ctx, testId, "create")
-	require.Error(t, err)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(nil, fmt.Errorf("error"))
-	err = usecase.UpdateCache(ctx, testId, "create")
-	require.Error(t, err)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(nil, fmt.Errorf("error"))
-	err = usecase.UpdateCache(ctx, testId, "create")
-	require.Error(t, err)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(fmt.Errorf("error"))
-	err = usecase.UpdateCache(ctx, testId, "update")
-	require.Error(t, err)
-
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, categories, categoriesListKey).Return(nil)
-	err = usecase.UpdateCache(ctx, testId, "update")
-	require.NoError(t, err)
+	filestorage := mocks.NewMockFilestorage(ctrl)
+	ctx := context.Background()
+	usecase := New(store, cache, filestorage, logger)
+	id := uuid.New()
+	category := &models.Category{Id: id}
+	testErr := errors.New("error")
+	t.Run("error delete category", func(t *testing.T) {
+		store.EXPECT().Delete(ctx, id).Return(testErr)
+		err := usecase.Delete(ctx, id)
+		require.Error(t, err)
+	})
+	t.Run("success delete category", func(t *testing.T) {
+		store.EXPECT().Delete(ctx, id).Return(nil)
+		cache.EXPECT().UpdateCache(ctx, category, models.DeleteOp).Return(nil)
+		err := usecase.Delete(ctx, id)
+		require.NoError(t, err)
+	})
 }
 
-func TestDeleteCategory(t *testing.T) {
+func Test_getCategories(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
+	logger := zap.L().Sugar()
+	store := mocks.NewMockCategoryStore(ctrl)
 	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	categoryRepo.EXPECT().DeleteCategory(ctx, testId).Return(fmt.Errorf("error"))
-	err := usecase.DeleteCategory(ctx, testId)
-	require.Error(t, err)
-
-	categoryRepo.EXPECT().DeleteCategory(ctx, testId).Return(nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(true)
-	categoryRepo.EXPECT().GetCategory(ctx, testId).Return(testModelCategoryWithId, nil)
-	cache.EXPECT().GetCategoriesListCache(ctx, categoriesListKey).Return(categories, nil)
-	cache.EXPECT().CreateCategoriesListСache(ctx, []models.Category{}, categoriesListKey).Return(nil)
-	err = usecase.DeleteCategory(ctx, testId)
-	require.NoError(t, err)
-
-	categoryRepo.EXPECT().DeleteCategory(ctx, testId).Return(nil)
-	cache.EXPECT().CheckCache(ctx, categoriesListKey).Return(false)
-	err = usecase.DeleteCategory(ctx, testId)
-	require.NoError(t, err)
-}
-
-func TestGetCategoryByName(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+	filestorage := mocks.NewMockFilestorage(ctrl)
 	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
-	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	categoryRepo.EXPECT().GetCategoryByName(ctx, testModelCategoryWithId.Name).Return(nil, fmt.Errorf("error"))
-	res, err := usecase.GetCategoryByName(ctx, testModelCategoryWithId.Name)
-	require.Error(t, err)
-	require.Nil(t, res)
-
-	categoryRepo.EXPECT().GetCategoryByName(ctx, testModelCategoryWithId.Name).Return(testModelCategoryWithId, nil)
-	res, err = usecase.GetCategoryByName(ctx, testModelCategoryWithId.Name)
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.Equal(t, res, testModelCategoryWithId)
-}
-
-func TestDeleteCategoryCache(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	ctx := context.Background()
-	logger := zap.L()
-	categoryRepo := mocks.NewMockCategoryStore(ctrl)
-	cache := mocks.NewMockICategoriesCache(ctrl)
-	filestorage := mocks.NewMockFileStorager(ctrl)
-	usecase := NewCategoryUsecase(categoryRepo, cache, filestorage, logger)
-
-	cache.EXPECT().DeleteCache(ctx, "testNamenameasc").Return(fmt.Errorf("error"))
-	err := usecase.DeleteCategoryCache(ctx, "testName")
-	require.Error(t, err)
-
-	cache.EXPECT().DeleteCache(ctx, "testNamenameasc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamenamedesc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamepriceasc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamepricedesc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNameQuantity").Return(err)
-	err = usecase.DeleteCategoryCache(ctx, "testName")
-	require.Error(t, err)
-
-	cache.EXPECT().DeleteCache(ctx, "testNamenameasc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamenamedesc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamepriceasc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNamepricedesc").Return(nil)
-	cache.EXPECT().DeleteCache(ctx, "testNameQuantity").Return(nil)
-	err = usecase.DeleteCategoryCache(ctx, "testName")
-	require.NoError(t, err)
+	usecase := New(store, cache, filestorage, logger)
+	categories := []models.Category{}
+	ch := make(chan models.Category, 1)
+	testErr := errors.New("error")
+	t.Run("success get categories from cache", func(t *testing.T) {
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(categories, nil)
+		res, err := usecase.getCategories(ctx)
+		require.NoError(t, err)
+		require.Equal(t, categories, res)
+	})
+	t.Run("error on get categories from store", func(t *testing.T) {
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(nil, testErr)
+		store.EXPECT().List(ctx).Return(ch, testErr)
+		res, err := usecase.getCategories(ctx)
+		require.Error(t, err)
+		require.Nil(t, res)
+	})
+	t.Run("success get empty categories list", func(t *testing.T) {
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(nil, testErr)
+		store.EXPECT().List(ctx).Return(ch, nil)
+		res, err := usecase.getCategories(ctx)
+		require.NoError(t, err)
+		require.Equal(t, categories, res)
+	})
+	t.Run("success get not empty categories list", func(t *testing.T) {
+		category := models.Category{Name: "name"}
+		categories := make([]models.Category, 1)
+		categories = append(categories, category)
+		ch <- category
+		close(ch)
+		cache.EXPECT().CategoriesFromCache(gomock.Any(), models.CategoriesList).Return(nil, testErr)
+		store.EXPECT().List(ctx).Return(ch, nil)
+		cache.EXPECT().CategoriesToCache(ctx, categories).Return(nil)
+		res, err := usecase.getCategories(ctx)
+		require.NoError(t, err)
+		require.Equal(t, categories, res)
+	})
 }

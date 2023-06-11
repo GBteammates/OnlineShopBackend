@@ -68,17 +68,27 @@ func (u *categoryUsecase) Update(ctx context.Context, category *models.Category)
 	return nil
 }
 
-// GetCategory call database and returns *models.Category with given id or returns error
-func (u *categoryUsecase) Get(ctx context.Context, param string) (*models.Category, error) {
-	u.logger.Debugf("Enter in usecase Get() with args: ctx, param", param)
-	category, err := u.store.Get(ctx, param)
+// Get call database and returns *models.Category with given id or returns error
+func (u *categoryUsecase) Get(ctx context.Context, id uuid.UUID) (*models.Category, error) {
+	u.logger.Debugf("Enter in usecase Get() with args: ctx, id: %v", id)
+	category, err := u.store.Get(ctx, id)
 	if err != nil {
 		return &models.Category{}, fmt.Errorf("error on get category: %w", err)
 	}
 	return category, nil
 }
 
-// GetCategoryList call database method and returns chan with all models.Category or error
+// CategoryByName call database and returns *models.Category with given category name or returns error
+func (u *categoryUsecase) CategoryByName(ctx context.Context, name string) (*models.Category, error) {
+	u.logger.Debugf("Enter in usecase CategoryByName() with args: ctx, name: %s", name)
+	category, err := u.store.CategoryByName(ctx, name)
+	if err != nil {
+		return &models.Category{}, fmt.Errorf("error on get category: %w", err)
+	}
+	return category, nil
+}
+
+// List call database method and returns chan with all models.Category or error
 func (u *categoryUsecase) List(ctx context.Context) ([]models.Category, error) {
 	u.logger.Debug("Enter in usecase List()")
 
@@ -99,8 +109,9 @@ func (u *categoryUsecase) Delete(ctx context.Context, id uuid.UUID) error {
 	err = u.cache.UpdateCache(ctx, &models.Category{Id: id}, models.DeleteOp)
 	if err != nil {
 		u.logger.Error(fmt.Sprintf("error on update cache: %v", err))
+	} else {
+		u.logger.Info("Delete category success")
 	}
-	u.logger.Info("Delete category success")
 	return nil
 }
 
@@ -122,7 +133,10 @@ func (u *categoryUsecase) getCategories(ctx context.Context) ([]models.Category,
 	if err != nil {
 		return nil, fmt.Errorf("error on get categories list from store: %w", err)
 	}
-	categories = make([]models.Category, 100)
+	if len(categoriesChan) == 0 {
+		return []models.Category{}, nil
+	}
+	categories = make([]models.Category, len(categoriesChan))
 	for category := range categoriesChan {
 		categories = append(categories, category)
 	}

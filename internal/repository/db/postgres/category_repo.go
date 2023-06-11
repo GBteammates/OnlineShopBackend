@@ -90,7 +90,7 @@ func (r *categoryStore) Create(ctx context.Context, category *models.Category) (
 // isDeletedCategory check created category name and if it is a deleted category name, returns
 // uid of deleted category and true
 func (r *categoryStore) isDeleted(ctx context.Context, name string) (uuid.UUID, bool) {
-	r.logger.Debug("Enter in repository is Deleted() with args: ctx, name: %s", name)
+	r.logger.Debug("Enter in repository isDeleted() with args: ctx, name: %s", name)
 	pool := r.db.GetPool()
 	category := models.Category{}
 	row := pool.QueryRow(ctx,
@@ -148,16 +148,16 @@ func (r *categoryStore) Update(ctx context.Context, category *models.Category) e
 	return nil
 }
 
-// GetCategory returns *models.Category by id or error
-func (r *categoryStore) Get(ctx context.Context, param string) (*models.Category, error) {
-	r.logger.Debugf("Enter in repository GetCategory() with args: ctx, param: %v", param)
+// Get returns *models.Category by id or error
+func (r *categoryStore) Get(ctx context.Context, id uuid.UUID) (*models.Category, error) {
+	r.logger.Debugf("Enter in repository Get() with args: ctx, id: %v", id)
 
 	pool := r.db.GetPool()
 
 	category := models.Category{}
 
 	row := pool.QueryRow(ctx,
-		`SELECT id, name, description, picture FROM categories WHERE deleted_at is null AND id = $1`, param)
+		`SELECT id, name, description, picture FROM categories WHERE deleted_at is null AND id = $1`, id)
 	err := row.Scan(
 		&category.Id,
 		&category.Name,
@@ -176,10 +176,38 @@ func (r *categoryStore) Get(ctx context.Context, param string) (*models.Category
 	return &category, nil
 }
 
-// CategoriesList reads all the categories from the database and writes it to the
+// CategoryByName returns *models.Category by category name or error
+func (r *categoryStore) CategoryByName(ctx context.Context, name string) (*models.Category, error) {
+	r.logger.Debugf("Enter in repository Get() with args: ctx, param: %v", name)
+
+	pool := r.db.GetPool()
+
+	category := models.Category{}
+
+	row := pool.QueryRow(ctx,
+		`SELECT id, name, description, picture FROM categories WHERE deleted_at is null AND name = $1`, name)
+	err := row.Scan(
+		&category.Id,
+		&category.Name,
+		&category.Description,
+		&category.Image,
+	)
+	if err != nil && strings.Contains(err.Error(), "no rows in result set") {
+		r.logger.Errorf("Error in rows scan get category by name: %s", err)
+		return nil, models.ErrorNotFound{}
+	}
+	if err != nil {
+		r.logger.Errorf("Error in rows scan get category by name: %s", err)
+		return nil, fmt.Errorf("error in rows scan get category by name: %w", err)
+	}
+	r.logger.Info("Get category success")
+	return &category, nil
+}
+
+// List reads all the categories from the database and writes it to the
 // output channel and returns this channel or error
 func (r *categoryStore) List(ctx context.Context) (chan models.Category, error) {
-	r.logger.Debug("Enter in repository CategoriesList() with args: ctx")
+	r.logger.Debug("Enter in repository List() with args: ctx")
 	categoryChan := make(chan models.Category, 100)
 	go func() {
 		defer close(categoryChan)

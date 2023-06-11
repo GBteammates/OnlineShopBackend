@@ -26,7 +26,8 @@ type IItemUsecase interface {
 type ICategoryUsecase interface {
 	Create(ctx context.Context, category *models.Category) (uuid.UUID, error)
 	Update(ctx context.Context, category *models.Category) error
-	Get(ctx context.Context, param string) (*models.Category, error)
+	Get(ctx context.Context, id uuid.UUID) (*models.Category, error)
+	CategoryByName(ctx context.Context, name string) (*models.Category, error)
 	List(ctx context.Context) ([]models.Category, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	UploadImage(ctx context.Context, id uuid.UUID, name string, file []byte) error

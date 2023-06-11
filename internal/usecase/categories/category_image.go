@@ -12,7 +12,7 @@ import (
 func (u *categoryUsecase) UploadImage(ctx context.Context, id uuid.UUID, name string, file []byte) error {
 	u.logger.Debugf("Enter in usecase UploadCategoryImage() with args: ctx, id: %v, name: %s, file", id, name)
 
-	category, err := u.store.Get(ctx, id.String())
+	category, err := u.store.Get(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get category: %w", err)
 	}
@@ -41,7 +41,7 @@ func (u *categoryUsecase) UploadImage(ctx context.Context, id uuid.UUID, name st
 func (u *categoryUsecase) DeleteImage(ctx context.Context, id uuid.UUID, name string) error {
 	u.logger.Debugf("Enter in usecase DeleteCategoryImage() with args: ctx, id: %v, name: %s", id, name)
 
-	category, err := u.store.Get(ctx, id.String())
+	category, err := u.store.Get(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error on get category: %w", err)
 	}
